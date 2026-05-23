@@ -1,0 +1,17 @@
+# Matt Pocock's skills directory
+mattpocock-skills/
+
+# Dependencies
+node_modules/
+
+# Local env files
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

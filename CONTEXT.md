@@ -1,0 +1,124 @@
+# HVAC Helper Pro
+
+A handheld troubleshooting device and paired mobile application that captures and synchronizes HVAC system measurements to automate service record generation.
+
+## Language
+
+### Measurements & Lifecycle
+
+**Snapshot**:
+A complete set of measurements captured for a service call, consisting of a **Before Set** and an **After Set**.
+_Avoid_: Sensor log, reading set
+
+**Before Set**:
+The group of system measurements taken at the start of a service call, which must be captured no older than 20 minutes before the first button press.
+_Avoid_: Before data, initial readings
+
+**After Set**:
+The group of system measurements taken after repairs or maintenance are performed, which must be captured within 20 minutes of the final button press.
+_Avoid_: After data, post-service readings
+
+**Data Point**:
+An individual raw sensor reading or manual entry value.
+_Avoid_: Reading, measurement
+
+**Timeout**:
+The 20-minute window during which a captured measurement must be confirmed by the mobile application before it expires and must be recaptured.
+_Avoid_: Expiration window
+
+**Transfer Latency**:
+The 3-second maximum duration allowed for a data point to be transmitted from the device and confirmed by the mobile application.
+_Avoid_: Transmission delay
+
+**Snapshot State**:
+The lifecycle status of a **Snapshot**, progressing from **Draft** (local-only, editable) to **Finalized** (immutable, queued in the Outbox for upload) to **Synced** (successfully uploaded to the cloud).
+_Avoid_: Sync status
+
+**Outbox**:
+The mobile app's local persistent queue of **Finalized** snapshots waiting for an internet connection to upload.
+_Avoid_: Sync queue
+
+**Revision**:
+A copy of a **Finalized** snapshot created to apply corrections, linked to the original via a parent ID and uploaded as a new audit record.
+_Avoid_: Snapshot edit, update
+
+### Hardware Interface & Feedback
+
+**Button**:
+A physical tactile control on the handheld device (specifically for Return Air, Supply Air, Outdoor Ambient, and Discharge Air) that initiates a sensor read, transmits the data via Bluetooth, and updates the associated LED.
+_Avoid_: Key, switch
+
+**Rotary Encoder**:
+An incremental digital input dial with an integrated push-button (specifically for Suction Line and Liquid Line) used to adjust manual saturation temperature (read directly from the physical gauge's refrigerant scale) and initiate a clamp probe temperature read, transmitting both data points via Bluetooth.
+_Avoid_: Reostat, potentiometer
+
+**LED Status**:
+The visual indicator next to a button or rotary encoder representing the transmission state of that data point, featuring unique flashing profiles (solid green for confirmed, slow pulse amber for transmitting, fast flash red for error) to support accessibility.
+_Avoid_: Light indicator, status light
+
+**Sleep Caching**:
+The temporary local storage of captured measurements on the handheld device, which are persisted through low-power states.
+_Avoid_: Local log
+
+**I2C Multiplexer**:
+An integrated circuit (TCA9548A) used to route the ESP32's primary I2C bus to multiple independent channels, enabling the use of multiple mini-OLED displays with matching I2C addresses.
+_Avoid_: Display switch
+
+### Mobile App Features
+
+**Photo Capture**:
+The process of photographing equipment service tags with the mobile application to extract text using local on-device OCR (Apple Vision / Android ML Kit), which is then parsed into structured model and serial numbers by the on-device LLM (or backend cloud LLM fallback).
+_Avoid_: Tag scan, image search
+
+**LLM Interaction**:
+The on-device (Apple/Android local model) or cloud-fallback feature that converts free-form technician notes or dictation into a structured service description and auto-itemizes consumables. Any cloud fallback execution enforces zero data retention to protect customer privacy.
+_Avoid_: AI chat, note generation
+
+### Domain Terms (Measurement Slots)
+
+**Return Air (RA)**:
+Temperature and relative humidity of the air entering the indoor evaporator coil, measured by the device's built-in sensor.
+_Avoid_: Indoor Air, Return Temp
+
+**Supply Air (SA)**:
+Temperature of the air leaving the indoor evaporator coil, measured by the device's built-in sensor.
+_Avoid_: Supply Temp
+
+**Outdoor Ambient (OA)**:
+Temperature of the air entering the outdoor condenser coil, measured by the device's built-in sensor.
+_Avoid_: Ambient Temp, Outdoor Air
+
+**Discharge Air (DA)**:
+Temperature of the air leaving the outdoor condenser fan outlet, measured by the device's built-in sensor.
+_Avoid_: Condenser Exhaust
+
+**Suction Line (SL)**:
+The low-pressure vapor line on which suction pipe temperature (via clamp probe) and suction saturation temperature (via left rotary encoder) are captured.
+_Avoid_: Vapor Line, Suction Side
+
+**Liquid Line (LL)**:
+The high-pressure liquid line on which liquid pipe temperature (via clamp probe) and liquid saturation temperature (via right rotary encoder) are captured.
+_Avoid_: High Side, Pressure Line
+
+## Relationships
+
+- A **Snapshot** consists of exactly one **Before Set** and exactly one **After Set**.
+- A **Before Set** and an **After Set** each consist of six **Data Points** corresponding to the six measurement slots.
+- **Return Air**, **Supply Air**, **Outdoor Ambient**, and **Discharge Air** capture data from the built-in sensor.
+- **Suction Line** and **Liquid Line** capture temperature from external clamp probes and saturation temperature from their respective **Rotary Encoders**.
+- Each **Data Point** updates its corresponding **LED Status**.
+
+## Example dialogue
+
+> **Dev:** "How does the device know which refrigerant to use for the **Suction Line** and **Liquid Line** superheat/subcooling calculations?"
+> **Domain expert:** "The device doesn't need to know the refrigerant type. The technician reads the saturation temperature directly from the gauge's printed dial for their specific refrigerant and dials that temperature into the device. The ESP32 then does simple subtraction to find superheat and subcooling."
+
+## Flagged ambiguities
+
+- **Reostat vs. Rotary Encoder**: Resolved to use digital **Rotary Encoders** with integrated push-buttons to prevent ESP32 ADC noise/jitter.
+- **Air Temperature Nomenclature**: Standardized on **Return Air (RA)**, **Supply Air (SA)**, **Outdoor Ambient (OA)**, and **Discharge Air (DA)**.
+- **Measurement Slots**: Consolidated physical controls to 4 buttons (RA, SA, OA, DA) and 2 rotary encoders (SL, LL) to simplify one-handed glove operation and optimize GPIO pin usage. Pushing an encoder dial captures clamp probe temperature and confirms the dialed saturation temperature.
+- **Accelerometer Wake-Up**: Removed. Wake-up is triggered via GPIO interrupt (EXT1) when any of the 4 physical buttons or 2 rotary encoder switches is pressed.
+- **Device Form Factor**: Mobile phone is primary for on-person capture, while tablets/desktops are used for secondary administrative workflows.
+
+
