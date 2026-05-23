@@ -1,0 +1,13 @@
+{
+  "name": "hvac-helper-tool",
+  "version": "1.0.0",
+  "description": "HVAC Helper Pro - Handheld Troubleshooting Device and Paired Mobile Application",
+  "type": "module",
+  "scripts": {
+    "prototype": "node prototype/index.js",
+    "compile-tokens": "node scripts/generate-tokens.js"
+  },
+  "keywords": [],
+  "author": "Antigravity",
+  "license": "ISC"
+}
