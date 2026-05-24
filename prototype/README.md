@@ -35,6 +35,15 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [Physical BEFORE/AFTER Switch Context-Swap](logic-before-after)
+*   **Directory**: [`prototype/logic-before-after`](logic-before-after)
+*   **Question Answered**: How does the handheld device manage context-swapping display caches and coordinate simultaneous BLE notifications when sliding between BEFORE and AFTER mode?
+*   **Type**: Interactive TUI (Terminal User Interface)
+*   **Run Command**:
+    ```bash
+    npm run prototype:logic-before-after
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
@@ -88,12 +97,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:ui-outbox-sync`
 *   **Question to Answer**: How should the app visually represent draft snapshots, queued finalized jobs, active background uploads, and sync error states under harsh glare?
 *   **Description**: Web views showing list options: standard bars, high-contrast multi-sensory color-blind badges, and a compact fleet manager logs table.
-
-### 11. [PLANNED] Physical BEFORE/AFTER Switch Context-Swap (Logic Prototype)
-*   **Target Directory**: `prototype/logic-before-after`
-*   **Run Command**: `npm run prototype:logic-before-after`
-*   **Question to Answer**: How does the handheld device manage context-swapping display caches and coordinate simultaneous BLE notifications when sliding between BEFORE and AFTER mode?
-*   **Description**: Interactive TUI simulating dual pointers for memory cache partition swapping and display context redraws.
 
 ---
 
