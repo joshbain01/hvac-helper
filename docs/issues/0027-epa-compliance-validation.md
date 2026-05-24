@@ -14,6 +14,8 @@ HITL
 ## Prototype Lessons & Context
 Validation confirms whether storing calculated Superheat/Subcooling and dialed-in saturation values meets environmental documentation requirements, rather than raw PSI values.
 
+This task is validated by the existing [Logic State Simulator](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/logic-state) prototype.
+
 ## What to build
 Consult with HVAC environmental compliance legal experts to validate whether the digital records captured by the system (dialed-in saturation temperatures and clamp probe temperatures) satisfy EPA Section 608 guidelines for leak verification and record-keeping.
 
@@ -27,3 +29,24 @@ None - can start immediately
 
 ## User stories covered
 N/A (Compliance validation)
+
+## Testing Guidance
+
+### Unit Testing
+- **Leak Math Rules**: Test calculations for leak rate thresholds and verification stages.
+- **EPA 608 Forms**: Validate form verification logic parameters.
+
+### Baseline Testing (Regression Prevention)
+- **Performance & Latency Baseline**:
+  - Establish compliance reporting speed targets.
+- **Behavioral & Data Baseline**:
+  - Freeze compliance schemas.
+
+### Integration & Manual Verification
+- **Report Generation**: Generate a simulated EPA 608 report and check that all values render correctly.
+- **Validation Blocks**: Confirm the app blocks snapshot submission if EPA compliance checks fail.
+
+## Definition of Done (DoD)
+- [ ] **Compliance Verified**: Reports meet EPA 608 criteria.
+- [ ] **Unit Tests**: Leak calculation and validation libraries pass unit testing.
+- [ ] **Visual Clarity**: EPA documents render cleanly under standard layouts.

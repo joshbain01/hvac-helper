@@ -180,6 +180,18 @@ The Snapshot is captured by the handheld troubleshooting device, synchronized to
     },
     "after_set": {
       "$ref": "#/$defs/draft_measurement_set"
+    },
+    "service_tags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/service_tag_item"
+      }
+    },
+    "custom_equipment_fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/custom_equipment_field_item"
+      }
     }
   },
   "allOf": [
@@ -344,6 +356,40 @@ The Snapshot is captured by the handheld troubleshooting device, synchronized to
     "source_type": {
       "type": "string",
       "enum": ["sensor", "manual_override"]
+    },
+    "service_tag_item": {
+      "type": "object",
+      "required": ["photo_uri", "captured_at", "captured_by"],
+      "properties": {
+        "photo_uri": {
+          "type": "string",
+          "description": "Local URI or cloud URL of the service tag photo."
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp of tag photo capture."
+        },
+        "captured_by": {
+          "type": "string",
+          "description": "Technician ID who captured the service tag photo."
+        },
+        "parsed_text": {
+          "type": "string"
+        }
+      }
+    },
+    "custom_equipment_field_item": {
+      "type": "object",
+      "required": ["field_name", "field_value"],
+      "properties": {
+        "field_name": {
+          "type": "string"
+        },
+        "field_value": {
+          "type": "string"
+        }
+      }
     }
   }
 }
@@ -455,7 +501,25 @@ The Snapshot is captured by the handheld troubleshooting device, synchronized to
       "superheat": 6.5,
       "subcooling": 6.0
     }
-  }
+  },
+  "service_tags": [
+    {
+      "photo_uri": "ph://assets-library/id=1002-3929-1",
+      "captured_at": "2026-05-22T14:12:00Z",
+      "captured_by": "8f8702b8-9366-4c74-8b65-bfd92a1012a4",
+      "parsed_text": "Goodman MFG CO MODEL: GSXC160361 SERIAL: 1608298711"
+    }
+  ],
+  "custom_equipment_fields": [
+    {
+      "field_name": "Tonnage",
+      "field_value": "3.0 Ton"
+    },
+    {
+      "field_name": "SEER",
+      "field_value": "16 SEER"
+    }
+  ]
 }
 ```
 

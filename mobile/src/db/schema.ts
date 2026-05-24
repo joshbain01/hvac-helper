@@ -114,3 +114,26 @@ export const outboxQueue = sqliteTable('outbox_queue', {
   errorMessage: text('error_message'),
   createdAt: text('created_at').notNull(),
 });
+
+/**
+ * Service Tags Table
+ * Stores references to uploaded physical service tags.
+ */
+export const serviceTags = sqliteTable('service_tags', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  snapshotId: text('snapshot_id').references(() => snapshots.snapshotId, { onDelete: 'cascade' }).notNull(),
+  photoUri: text('photo_uri').notNull(),
+  capturedAt: text('captured_at').notNull(),
+  parsedText: text('parsed_text'),
+});
+
+/**
+ * Custom Equipment Fields Table
+ * Stores dynamic key-value parameters that vary between AC systems.
+ */
+export const customEquipmentFields = sqliteTable('custom_equipment_fields', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  snapshotId: text('snapshot_id').references(() => snapshots.snapshotId, { onDelete: 'cascade' }).notNull(),
+  fieldName: text('field_name').notNull(),
+  fieldValue: text('field_value').notNull(),
+});

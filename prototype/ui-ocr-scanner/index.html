@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Camera Scanner & OCR Flow - UI Prototype</title>
+  <!-- Load Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Core Design System CSS -->
+  <link rel="stylesheet" href="/css/design-system.css">
+  <!-- Local Prototype Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Simulation Control Sidebar -->
+  <aside class="control-panel">
+    <div class="panel-header">
+      <h2>Simulation Controls</h2>
+      <p class="panel-subtitle">Stress-test the designs under extreme field conditions</p>
+    </div>
+
+    <!-- Solar Glare Simulator -->
+    <div class="control-group">
+      <label class="control-label">Outdoor Environment</label>
+      <div class="toggle-container">
+        <button id="toggle-glare" class="btn btn--secondary">
+          <span class="btn-icon">☀️</span> Simulate Solar Glare (10,000+ nits)
+        </button>
+      </div>
+      <p class="control-help">Washes out screen colors and adds a harsh glare reflection overlay to simulate direct sunlight.</p>
+    </div>
+
+    <!-- Glove Size Overlay -->
+    <div class="control-group">
+      <label class="control-label">Technician Ergonomics</label>
+      <div class="toggle-container">
+        <button id="toggle-glove-zones" class="btn btn--secondary">
+          <span class="btn-icon">🧤</span> Toggle Glove Target Overlays
+        </button>
+      </div>
+      <p class="control-help">Displays 64px red zones showing accessibility targets for thick utility gloves.</p>
+    </div>
+
+    <!-- HVAC Nameplate Selector -->
+    <div class="control-group">
+      <label class="control-label" for="nameplate-select">Active HVAC Nameplate</label>
+      <select id="nameplate-select" class="form-select">
+        <option value="goodman">Goodman Manufacturing Co. (R-410A)</option>
+        <option value="carrier">Carrier Corporation (R-410A)</option>
+        <option value="trane">Trane Air Conditioner (R-22)</option>
+      </select>
+      <p class="control-help">Changes the nameplate model serial data currently in front of the camera viewport.</p>
+    </div>
+
+    <!-- Active Nameplate View (Simulating physical equipment) -->
+    <div class="control-group">
+      <label class="control-label">Physical Equipment (What the Camera Sees)</label>
+      <div class="nameplate-preview-container">
+        <!-- Goodman Nameplate -->
+        <div id="plate-goodman" class="hvac-nameplate active">
+          <div class="plate-header">GOODMAN MFG. CO.</div>
+          <div class="plate-grid">
+            <div class="plate-row"><span>MODEL NO:</span> <strong class="ocr-model">GSX140361</strong></div>
+            <div class="plate-row"><span>SERIAL NO:</span> <strong class="ocr-serial">1908234561</strong></div>
+            <div class="plate-row"><span>REFRIGERANT:</span> <strong class="ocr-refrigerant">R-410A</strong></div>
+            <div class="plate-row"><span>CHARGE:</span> <span>7 LBS 8 OZ</span></div>
+            <div class="plate-row"><span>VOLTS:</span> <span>208/230</span></div>
+            <div class="plate-row"><span>PHASE:</span> <span>1</span></div>
+          </div>
+          <div class="plate-barcode">||||||||||||||||||||||||||||||</div>
+        </div>
+
+        <!-- Carrier Nameplate -->
+        <div id="plate-carrier" class="hvac-nameplate">
+          <div class="plate-header">CARRIER CORPORATION</div>
+          <div class="plate-grid">
+            <div class="plate-row"><span>MODEL:</span> <strong class="ocr-model">24AAA536A003</strong></div>
+            <div class="plate-row"><span>SERIAL:</span> <strong class="ocr-serial">4518E12345</strong></div>
+            <div class="plate-row"><span>REFRIG:</span> <strong class="ocr-refrigerant">R-410A</strong></div>
+            <div class="plate-row"><span>SYS CHARGE:</span> <span>6.10 LBS</span></div>
+            <div class="plate-row"><span>DESIGN PRESS:</span> <span>450 PSI</span></div>
+          </div>
+          <div class="plate-barcode">|||||||||||||||||||||||||||||||||</div>
+        </div>
+
+        <!-- Trane Nameplate -->
+        <div id="plate-trane" class="hvac-nameplate">
+          <div class="plate-header">TRANE INC.</div>
+          <div class="plate-grid">
+            <div class="plate-row"><span>MODEL NO:</span> <strong class="ocr-model">4TTR6036B1000A</strong></div>
+            <div class="plate-row"><span>SERIAL NO:</span> <strong class="ocr-serial">18423ABCD4</strong></div>
+            <div class="plate-row"><span>REFRIGERANT:</span> <strong class="ocr-refrigerant">R-22</strong></div>
+            <div class="plate-row"><span>FACTORY CHG:</span> <span>8.50 LBS</span></div>
+            <div class="plate-row"><span>MAX FUSE:</span> <span>30 AMP</span></div>
+          </div>
+          <div class="plate-barcode">|||||||||||||||||||||||||||</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions & Keyboard Shortcuts -->
+    <div class="control-group shortcuts-section">
+      <h3>Keyboard Shortcuts</h3>
+      <ul class="shortcuts-list">
+        <li><kbd>←</kbd> <kbd>→</kbd> : Cycle UI variants</li>
+        <li><kbd>S</kbd> : Toggle Sunlight theme</li>
+        <li><kbd>G</kbd> : Toggle Solar Glare</li>
+        <li><kbd>L</kbd> : Simulate Scan Trigger (Laser)</li>
+        <li><kbd>R</kbd> : Reset form data</li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Mobile App Preview Area -->
+  <main class="preview-area">
+    <!-- Rugged Phone Enclosure -->
+    <div class="phone-enclosure">
+      <div class="phone-speaker"></div>
+      
+      <!-- Phone Viewport Screen (Interactive App) -->
+      <div id="app-viewport" class="phone-viewport" data-theme="light">
+        
+        <!-- App Status Bar -->
+        <header class="app-status-bar">
+          <span class="status-time">09:15 AM</span>
+          <span class="status-title">HVAC Helper Pro</span>
+          <div class="status-icons">
+            <span id="ble-indicator" class="ble-icon connected">📶</span>
+            <span class="battery-icon">🔋 85%</span>
+          </div>
+        </header>
+
+        <!-- Dynamic Theme Selector Header -->
+        <section class="app-theme-header">
+          <span class="theme-label">Theme Mode:</span>
+          <div class="theme-toggle">
+            <button class="theme-toggle-option active" data-theme="light">Light</button>
+            <button class="theme-toggle-option" data-theme="dark">Dark</button>
+            <button class="theme-toggle-option" data-theme="sunlight">Sunlight</button>
+          </div>
+        </section>
+
+        <!-- Variant View Container -->
+        <div class="variant-content-wrapper">
+          
+          <!-- ==================== VARIANT A: HUD STYLE ==================== -->
+          <div id="variant-view-A" class="variant-view active">
+            <!-- Viewfinder Area -->
+            <div class="camera-viewport">
+              <div class="camera-overlay-hud">
+                <div class="corner-bracket top-left"></div>
+                <div class="corner-bracket top-right"></div>
+                <div class="corner-bracket bottom-left"></div>
+                <div class="corner-bracket bottom-right"></div>
+                <div class="laser-scanner-line"></div>
+                <div class="hud-center-guide">ALIGN NAMEPLATE HERE</div>
+              </div>
+              <!-- Mock Nameplate Camera Projection -->
+              <div class="camera-feed-projection goodman"></div>
+            </div>
+
+            <!-- Dashboard / Floating Guidance Action Drawer -->
+            <div class="hud-bottom-drawer">
+              <div class="drawer-header">
+                <h3>Nameplate Scanner (HUD)</h3>
+                <span class="status-badge error">Required before finalized</span>
+              </div>
+              <p class="drawer-instruction">Fit the manufacturer's nameplate inside the guide box.</p>
+              
+              <div class="drawer-actions">
+                <button class="btn btn--primary btn-glove scan-action-btn">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h3V2H4c-1.1 0-2 .9-2 2v3h2V4zm3 16H4v-3H2v3c0 1.1.9 2 2 2h3v-2zm13-16h-3V2h3c1.1 0 2 .9 2 2v3h-2V4zm0 13h2v3c0 1.1-.9 2-2 2h-3v-2h3v-3zM12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+                  <span>CAPTURE & SCAN</span>
+                </button>
+                <button class="btn btn--secondary btn-glove manual-bypass-btn">
+                  <span>MANUAL BYPASS</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Manual Edit Form Overlay (Appears when bypassed or scanning is successful/edited) -->
+            <div class="form-overlay hidden">
+              <div class="overlay-header">
+                <h2>Equipment Nameplate Details</h2>
+                <button class="btn btn--secondary btn-close-overlay">✕ Close</button>
+              </div>
+              <div class="form-body">
+                <div class="form-group-large">
+                  <label>OEM BRAND DETECTED</label>
+                  <div id="hud-oem-badge-container"></div>
+                </div>
+                <div class="form-group-large">
+                  <label for="hud-input-model">MODEL NUMBER</label>
+                  <input type="text" id="hud-input-model" class="glove-input" placeholder="e.g. GSX140361">
+                </div>
+                <div class="form-group-large">
+                  <label for="hud-input-serial">SERIAL NUMBER</label>
+                  <input type="text" id="hud-input-serial" class="glove-input" placeholder="e.g. 1908234561">
+                </div>
+                <div class="form-group-large">
+                  <label for="hud-input-refrigerant">REFRIGERANT BLEND</label>
+                  <select id="hud-input-refrigerant" class="glove-input">
+                    <option value="">-- SELECT REFRIGERANT --</option>
+                    <option value="R-410A">R-410A (HFC Blend)</option>
+                    <option value="R-22">R-22 (HCFC R-22)</option>
+                    <option value="R-32">R-32 (A2L Blend)</option>
+                    <option value="R-454B">R-454B (Opteon XL41)</option>
+                  </select>
+                </div>
+                <button class="btn btn--primary btn-glove w-100 save-fields-btn">
+                  <span>✔ CONFIRM EQUIPMENT DETAILS</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== VARIANT B: SPLIT SCREEN ==================== -->
+          <div id="variant-view-B" class="variant-view">
+            <!-- Top Half Viewfinder -->
+            <div class="camera-viewport-split">
+              <div class="camera-overlay-hud minimized">
+                <div class="corner-bracket top-left"></div>
+                <div class="corner-bracket top-right"></div>
+                <div class="corner-bracket bottom-left"></div>
+                <div class="corner-bracket bottom-right"></div>
+                <div class="laser-scanner-line"></div>
+              </div>
+              <div class="camera-feed-projection goodman"></div>
+              <div class="scan-floating-status">Aiming...</div>
+            </div>
+
+            <!-- Bottom Half Form (Continuous update / manual fields) -->
+            <div class="split-bottom-panel">
+              <div class="panel-header-compact">
+                <span>OCR Live Status: <strong id="ocr-status-badge">READY TO CAPTURE</strong></span>
+              </div>
+              
+              <div class="split-form">
+                <div class="form-field-large" style="margin-bottom: var(--space-xs);">
+                  <label>OEM BRAND DETECTED</label>
+                  <div id="split-oem-badge-container"></div>
+                </div>
+                <div class="form-row-compact">
+                  <div class="form-field-large">
+                    <label for="split-input-model">MODEL NO</label>
+                    <input type="text" id="split-input-model" class="glove-input" placeholder="MODEL #">
+                  </div>
+                  <div class="form-field-large">
+                    <label for="split-input-serial">SERIAL NO</label>
+                    <input type="text" id="split-input-serial" class="glove-input" placeholder="SERIAL #">
+                  </div>
+                </div>
+                
+                <div class="form-field-large">
+                  <label for="split-input-refrigerant">REFRIGERANT TYPE</label>
+                  <select id="split-input-refrigerant" class="glove-input">
+                    <option value="">(Tap to Select)</option>
+                    <option value="R-410A">R-410A</option>
+                    <option value="R-22">R-22</option>
+                    <option value="R-32">R-32</option>
+                    <option value="R-454B">R-454B</option>
+                  </select>
+                </div>
+                
+                <div class="split-actions">
+                  <button class="btn btn--primary btn-glove scan-action-btn w-60">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h3V2H4c-1.1 0-2 .9-2 2v3h2V4zm3 16H4v-3H2v3c0 1.1.9 2 2 2h3v-2zm13-16h-3V2h3c1.1 0 2 .9 2 2v3h-2V4zm0 13h2v3c0 1.1-.9 2-2 2h-3v-2h3v-3zM12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+                    <span>SCAN</span>
+                  </button>
+                  <button class="btn btn--secondary btn-glove w-40 save-fields-btn">
+                    <span>CONFIRM</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== VARIANT C: STEP WIZARD ==================== -->
+          <div id="variant-view-C" class="variant-view">
+            
+            <!-- Wizard Step 1: Start -->
+            <div id="wizard-step-1" class="wizard-step active">
+              <div class="wizard-intro-card">
+                <div class="wizard-icon-container">📷</div>
+                <h2>Capture Equipment Info</h2>
+                <p>Verify model details, unit serial numbers, and refrigerant blend to populate tolerances.</p>
+                
+                <button class="btn btn--primary btn-glove w-100 wizard-next-btn" data-goto="2">
+                  <span>START CAMERA SCAN</span>
+                </button>
+                
+                <button class="btn btn--secondary btn-glove w-100 wizard-bypass-btn">
+                  <span>ENTER DETAILS MANUALLY</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Wizard Step 2: Camera HUD -->
+            <div id="wizard-step-2" class="wizard-step">
+              <div class="camera-viewport-full">
+                <div class="camera-overlay-hud text-guide">
+                  <div class="corner-bracket top-left"></div>
+                  <div class="corner-bracket top-right"></div>
+                  <div class="corner-bracket bottom-left"></div>
+                  <div class="corner-bracket bottom-right"></div>
+                  <div class="laser-scanner-line"></div>
+                  
+                  <!-- Bounding viewport box guide -->
+                  <div class="viewport-scanner-box">
+                    <span style="font-size: 8px; font-weight: bold; color: var(--palette-green-500); margin-bottom: 2px;">ALIGN NAMEPLATE / TAG HERE</span>
+                    <div style="width: 75%; height: 1px; background: rgba(33, 136, 56, 0.4);"></div>
+                  </div>
+
+                  <div id="wizard-ocr-status" class="hud-center-guide" style="animation: pulse-breathing 1.2s infinite ease-in-out; top: 75%;">🔍 ALIGNING... AUTO-CAPTURE RUNNING</div>
+                  
+                  <div class="hud-top-cancel">
+                    <button class="btn btn--secondary wizard-back-btn" data-goto="1">✕ Cancel</button>
+                  </div>
+                </div>
+                <!-- Camera feed -->
+                <div class="camera-feed-projection goodman"></div>
+
+                <div class="hud-capture-bar">
+                  <button class="btn btn--secondary btn-glove capture-trigger-btn">
+                    <span>🔴 MANUAL CAPTURE</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Wizard Step 3: Success & Review Fields -->
+            <div id="wizard-step-3" class="wizard-step">
+              <div class="wizard-review-container">
+                <div class="review-status-header">
+                  <span class="status-icon-check">✔</span>
+                  <div>
+                    <h3>OCR Match Success</h3>
+                    <p>Before proceeding, verify scanned details below</p>
+                  </div>
+                </div>
+
+                <div class="review-grid">
+                  <!-- OCR crop simulation -->
+                  <div class="crop-match-item">
+                    <label for="wizard-input-model" class="crop-lbl">Model Number:</label>
+                    <input type="text" id="wizard-input-model" class="glove-input ocr-model" style="min-height: 48px; font-size: var(--text-sm); padding: 0 var(--space-sm);" value="GSX140361">
+                    <div class="crop-preview-box" style="margin-top: 4px;">
+                      <div class="crop-sim-image model-crop"></div>
+                      <div class="crop-watermark">📷 CAM CROP</div>
+                    </div>
+                  </div>
+                  
+                  <div class="crop-match-item">
+                    <label for="wizard-input-serial" class="crop-lbl">Serial Number:</label>
+                    <input type="text" id="wizard-input-serial" class="glove-input ocr-serial" style="min-height: 48px; font-size: var(--text-sm); padding: 0 var(--space-sm);" value="1908234561">
+                    <div class="crop-preview-box" style="margin-top: 4px;">
+                      <div class="crop-sim-image serial-crop"></div>
+                      <div class="crop-watermark">📷 CAM CROP</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group-large">
+                  <label>OEM BRAND DETECTED</label>
+                  <div id="wizard-oem-badge-container"></div>
+                </div>
+
+                <div class="form-group-large">
+                  <label for="wizard-input-refrigerant">REFRIGERANT</label>
+                  <select id="wizard-input-refrigerant" class="glove-input">
+                    <option value="R-410A">R-410A</option>
+                    <option value="R-22">R-22</option>
+                    <option value="R-32">R-32</option>
+                    <option value="R-454B">R-454B</option>
+                  </select>
+                </div>
+
+                <!-- Service Tag Photo Section -->
+                <div class="form-group-large" style="margin-top: var(--space-xs);">
+                  <label>📷 UPLOADED SERVICE TAGS (<span id="tag-count-label">1</span>)</label>
+                  <div id="service-tags-list-container" style="display:flex; gap:var(--space-sm); overflow-x:auto; padding: 4px 0;">
+                    <div class="tag-thumbnail-card">
+                      <span class="tag-thumb-icon">📄</span>
+                      <span class="tag-thumb-date">Tag 2026-05-24</span>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-upload-service-tag" class="btn btn--secondary btn-glove w-100" style="min-height:56px; margin-top:4px;">
+                    <span>📷 UPLOAD SERVICE TAG PHOTO</span>
+                  </button>
+                </div>
+
+                <!-- Dynamic Custom Data Fields Section -->
+                <div class="form-group-large" style="margin-top: var(--space-md); border-top: 1px solid var(--color-border); padding-top: var(--space-md);">
+                  <label>➕ CUSTOM EQUIPMENT FIELDS</label>
+                  <div id="custom-fields-dynamic-container" style="display:flex; flex-direction:column; gap:var(--space-sm); margin-bottom: 8px;">
+                    <!-- Default custom fields -->
+                    <div class="custom-field-row">
+                      <span class="custom-field-name">Tonnage</span>
+                      <input type="text" class="glove-input custom-field-input" style="min-height:44px; width:120px; font-size:var(--text-sm); padding:0 var(--space-sm);" value="3.0 Ton">
+                    </div>
+                    <div class="custom-field-row">
+                      <span class="custom-field-name">SEER Rating</span>
+                      <input type="text" class="glove-input custom-field-input" style="min-height:44px; width:120px; font-size:var(--text-sm); padding:0 var(--space-sm);" value="14 SEER">
+                    </div>
+                  </div>
+                  <button type="button" id="btn-add-custom-field" class="btn btn--secondary btn-glove w-100" style="min-height:56px; margin-top: 4px;">
+                    <span>➕ ADD CUSTOM FIELD</span>
+                  </button>
+                </div>
+
+                <div class="wizard-action-footer">
+                  <button class="btn btn--secondary btn-glove w-40 wizard-back-btn" data-goto="2">
+                    <span>RESCAN</span>
+                  </button>
+                  <button class="btn btn--primary btn-glove w-60 save-fields-btn">
+                    <span>APPROVE & SAVE</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- variant-content-wrapper -->
+
+        <!-- Simulation Haptic Feedback overlay -->
+        <div id="haptic-toast" class="haptic-toast-hidden">📳 Haptic pulse (100ms)</div>
+
+        <!-- Solar Glare Overlay -->
+        <div id="glare-overlay" class="glare-overlay-hidden">
+          <div class="glare-reflection"></div>
+        </div>
+
+      </div> <!-- phone-viewport -->
+      <div class="phone-home-button"></div>
+    </div> <!-- phone-enclosure -->
+  </main>
+
+  <!-- Prototype Switcher Floating Footer Bar (Bottom Centre) -->
+  <nav id="prototype-switcher" class="prototype-switcher-bar">
+    <button id="switch-prev" class="switcher-arrow" aria-label="Previous Variant">←</button>
+    <div class="switcher-label">
+      <span class="switcher-key">VARIANT A</span>
+      <span id="variant-title-label" class="switcher-title">Camera HUD Viewport</span>
+    </div>
+    <button id="switch-next" class="switcher-arrow" aria-label="Next Variant">→</button>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>
