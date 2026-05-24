@@ -35,6 +35,15 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [Hardware Power-On Self-Test Routine](logic-self-test)
+*   **Directory**: [`prototype/logic-self-test`](logic-self-test)
+*   **Question Answered**: How does the firmware check individual hardware components and enter degraded standalone modes on faults?
+*   **Type**: Interactive TUI (Terminal User Interface)
+*   **Run Command**:
+    ```bash
+    npm run prototype:logic-self-test
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
@@ -52,12 +61,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:logic-rollback`
 *   **Question to Answer**: What sequence of boot partition flags, public key checks, and self-test verification timers guarantees that a corrupted or crashing firmware update safely restores device function?
 *   **Description**: TUI simulating the ESP32 partition table, signature verification checks, and automated rollbacks triggered by simulated watchdog crashes.
-
-### 5. [PLANNED] Hardware Power-On Self-Test (POST) Routine (Logic Prototype)
-*   **Target Directory**: `prototype/logic-self-test`
-*   **Run Command**: `npm run prototype:logic-self-test`
-*   **Question to Answer**: How does the firmware check individual hardware components (I2C OLED screen, Rotary Encoders, tactile Buttons, BLE, clamp probes) and enter degraded standalone modes on faults?
-*   **Description**: Console mockup simulating power-on checks, fault injection (e.g. stuck buttons, open probes), and error reporting.
 
 ### 6. [PLANNED] FSM Webhook Integration & Custom Fields Mapper (Logic Prototype)
 *   **Target Directory**: `prototype/logic-fsm-sync`
