@@ -35,6 +35,15 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [Tiered SaaS & Pricing Sensitivity Model](logic-pricing)
+*   **Directory**: [`prototype/logic-pricing`](logic-pricing)
+*   **Question Answered**: How do varying subscriber attach rates, LLM fallback API costs, and distributor margins affect break-even economics?
+*   **Type**: Interactive TUI (Terminal User Interface)
+*   **Run Command**:
+    ```bash
+    npm run prototype:logic-pricing
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
@@ -64,12 +73,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:logic-fsm-sync`
 *   **Question to Answer**: How do we transform raw local SQLite snapshots into invoices/work orders on ServiceTitan and Housecall Pro APIs, ensuring data consistency despite token expiry or custom field limits?
 *   **Description**: Node utility importing snapshot payloads, mapping before/after delta structures, and calling mock sandbox webhooks.
-
-### 7. [PLANNED] Tiered SaaS & Pricing Sensitivity Model (Logic Prototype)
-*   **Target Directory**: `prototype/logic-pricing`
-*   **Run Command**: `npm run prototype:logic-pricing`
-*   **Question to Answer**: How do varying subscriber attach rates, LLM fallback API costs, and distributor margins affect break-even Economics?
-*   **Description**: Command-line sensitivity calculator that computes operating margins and break-even windows based on variable user/unit economic parameters.
 
 ### 8. [PLANNED] Homeowner PDF Service Report Layouts (UI Prototype)
 *   **Target Directory**: `prototype/ui-service-reports`
