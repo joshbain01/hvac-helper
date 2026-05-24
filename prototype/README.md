@@ -35,13 +35,22 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
-### 4. [Tiered SaaS & Pricing Sensitivity Model](logic-pricing)
-*   **Directory**: [`prototype/logic-pricing`](logic-pricing)
-*   **Question Answered**: How do varying subscriber attach rates, LLM fallback API costs, and distributor margins affect break-even economics?
+### 4. [Partition Swap & Rollback Simulator](logic-rollback)
+*   **Directory**: [`prototype/logic-rollback`](logic-rollback)
+*   **Question Answered**: What sequence of boot partition flags, public key checks, and self-test verification timers guarantees that a corrupted or crashing firmware update safely restores device function?
 *   **Type**: Interactive TUI (Terminal User Interface)
 *   **Run Command**:
     ```bash
-    npm run prototype:logic-pricing
+    npm run prototype:logic-rollback
+    ```
+
+### 5. [SQLite Outbox Sync Status & Error States](ui-outbox-sync)
+*   **Directory**: [`prototype/ui-outbox-sync`](ui-outbox-sync)
+*   **Question Answered**: How should the app visually represent draft snapshots, queued finalized jobs, active background uploads, and sync error states under harsh glare?
+*   **Type**: Web Application Prototype (HTML/CSS/JS)
+*   **Run Command**:
+    ```bash
+    npm run prototype:ui-outbox-sync
     ```
 
 ---
@@ -56,23 +65,17 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Question to Answer**: How should the app present expanded professional notes and suggested consumables checklists so the technician can review and correct them in under 15 seconds?
 *   **Description**: Mockups displaying dynamic inline expansion, a multi-step checklist wizard with glove-friendly tap zones, and a side-by-side comparison screen.
 
-### 4. [PLANNED] Partition Swap & Rollback Simulator (Logic Prototype)
-*   **Target Directory**: `prototype/logic-rollback`
-*   **Run Command**: `npm run prototype:logic-rollback`
-*   **Question to Answer**: What sequence of boot partition flags, public key checks, and self-test verification timers guarantees that a corrupted or crashing firmware update safely restores device function?
-*   **Description**: TUI simulating the ESP32 partition table, signature verification checks, and automated rollbacks triggered by simulated watchdog crashes.
-
 ### 5. [PLANNED] Hardware Power-On Self-Test (POST) Routine (Logic Prototype)
 *   **Target Directory**: `prototype/logic-self-test`
 *   **Run Command**: `npm run prototype:logic-self-test`
 *   **Question to Answer**: How does the firmware check individual hardware components (I2C OLED screen, Rotary Encoders, tactile Buttons, BLE, clamp probes) and enter degraded standalone modes on faults?
 *   **Description**: Console mockup simulating power-on checks, fault injection (e.g. stuck buttons, open probes), and error reporting.
 
-### 6. [PLANNED] FSM Webhook Integration & Custom Fields Mapper (Logic Prototype)
-*   **Target Directory**: `prototype/logic-fsm-sync`
-*   **Run Command**: `npm run prototype:logic-fsm-sync`
-*   **Question to Answer**: How do we transform raw local SQLite snapshots into invoices/work orders on ServiceTitan and Housecall Pro APIs, ensuring data consistency despite token expiry or custom field limits?
-*   **Description**: Node utility importing snapshot payloads, mapping before/after delta structures, and calling mock sandbox webhooks.
+### 7. [PLANNED] Tiered SaaS & Pricing Sensitivity Model (Logic Prototype)
+*   **Target Directory**: `prototype/logic-pricing`
+*   **Run Command**: `npm run prototype:logic-pricing`
+*   **Question to Answer**: How do varying subscriber attach rates, LLM fallback API costs, and distributor margins affect break-even Economics?
+*   **Description**: Command-line sensitivity calculator that computes operating margins and break-even windows based on variable user/unit economic parameters.
 
 ### 8. [PLANNED] Homeowner PDF Service Report Layouts (UI Prototype)
 *   **Target Directory**: `prototype/ui-service-reports`
@@ -85,12 +88,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:logic-ble-binary`
 *   **Question to Answer**: How can we pack the 6 raw values, 2 dial values, calculated metrics, and sensor states into a compact binary payload to fit within a single BLE packet?
 *   **Description**: Serialization test script comparing custom bit-packed buffers vs. standard JSON layouts to measure compression and speed.
-
-### 10. [PLANNED] SQLite Outbox Sync Status & Error States (UI Prototype)
-*   **Target Directory**: `prototype/ui-outbox-sync`
-*   **Run Command**: `npm run prototype:ui-outbox-sync`
-*   **Question to Answer**: How should the app visually represent draft snapshots, queued finalized jobs, active background uploads, and sync error states under harsh glare?
-*   **Description**: Web views showing list options: standard bars, high-contrast multi-sensory color-blind badges, and a compact fleet manager logs table.
 
 ### 11. [PLANNED] Physical BEFORE/AFTER Switch Context-Swap (Logic Prototype)
 *   **Target Directory**: `prototype/logic-before-after`
