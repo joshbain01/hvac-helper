@@ -35,6 +35,15 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [Compact Binary BLE Serialization Protocol](logic-ble-binary)
+*   **Directory**: [`prototype/logic-ble-binary`](logic-ble-binary)
+*   **Question Answered**: How can we pack the raw values, dial values, calculated metrics, and sensor states into a compact binary payload to fit within a single BLE packet?
+*   **Type**: Interactive TUI (Terminal User Interface)
+*   **Run Command**:
+    ```bash
+    npm run prototype:logic-ble-binary
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
@@ -76,12 +85,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:ui-service-reports`
 *   **Question to Answer**: What layout maximizes the "wow" factor for homeowners while clearly displaying HVAC system health and repair outcomes?
 *   **Description**: Web generator producing three visual PDF themes: a color-coded graphic infographic, a detailed technical/compliance ledger, and an itemized work completed card.
-
-### 9. [PLANNED] Compact Binary BLE Serialization Protocol (Logic Prototype)
-*   **Target Directory**: `prototype/logic-ble-binary`
-*   **Run Command**: `npm run prototype:logic-ble-binary`
-*   **Question to Answer**: How can we pack the 6 raw values, 2 dial values, calculated metrics, and sensor states into a compact binary payload to fit within a single BLE packet?
-*   **Description**: Serialization test script comparing custom bit-packed buffers vs. standard JSON layouts to measure compression and speed.
 
 ### 10. [PLANNED] SQLite Outbox Sync Status & Error States (UI Prototype)
 *   **Target Directory**: `prototype/ui-outbox-sync`
