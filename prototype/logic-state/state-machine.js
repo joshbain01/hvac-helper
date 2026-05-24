@@ -44,6 +44,16 @@ export class HvacStateMachine {
         }
       },
       
+      // LED checklist statuses
+      leds: {
+        return_air: 'YELLOW_SOLID',
+        supply_air: 'YELLOW_SOLID',
+        outdoor_ambient: 'YELLOW_SOLID',
+        discharge_air: 'YELLOW_SOLID',
+        suction_line: 'YELLOW_SOLID',
+        liquid_line: 'YELLOW_SOLID'
+      },
+
       // Active calculations and references currently on display
       display: {
         returnAir: 'N/A',
@@ -109,6 +119,7 @@ export class HvacStateMachine {
       site_id: 'SITE-012',
       device_id: 'AA:BB:CC:DD:EE:FF',
       refrigerant: parentSnapshot ? parentSnapshot.refrigerant : 'PENDING',
+      ocr_status: parentSnapshot ? parentSnapshot.ocr_status : 'PENDING', // PENDING, OCR_SUCCESS, MANUAL_OVERRIDE
       created_at: this.currentTime.toISOString(),
       updated_at: this.currentTime.toISOString(),
       equipment: parentSnapshot ? { ...parentSnapshot.equipment } : {
@@ -126,6 +137,11 @@ export class HvacStateMachine {
     newSnapshot.id_internal = generateUUID();
     this.currentSnapshot = newSnapshot;
     
+    // Inherit physical device cache if revising
+    if (parentSnapshot) {
+      this.loadCacheFromSnapshot();
+    }
+
     this.syncDeviceTargetsFromApp();
     this.syncDeviceDisplayFromCache();
   }
@@ -133,6 +149,68 @@ export class HvacStateMachine {
   cloneMeasurementSet(set) {
     if (!set) return null;
     return JSON.parse(JSON.stringify(set));
+  }
+
+  // Restore physical device cache from snapshot draft (Revision inheritance)
+  loadCacheFromSnapshot() {
+    if (!this.currentSnapshot) return;
+    
+    const loadSet = (snapSet, cacheSet) => {
+      // First, reset this cache set to defaults
+      Object.keys(cacheSet).forEach(slot => {
+        if (slot === 'suction_line' || slot === 'liquid_line') {
+          cacheSet[slot].pipeTemp = null;
+          cacheSet[slot].dialSatTemp = slot === 'suction_line' ? 40.0 : 105.0;
+        } else {
+          cacheSet[slot].val = null;
+          cacheSet[slot].humidity = null;
+        }
+        cacheSet[slot].capturedAt = null;
+      });
+
+      if (!snapSet) return;
+
+      // Return Air
+      if (snapSet.return_air) {
+        cacheSet.return_air.val = snapSet.return_air.temp;
+        cacheSet.return_air.humidity = snapSet.return_air.humidity;
+        cacheSet.return_air.capturedAt = snapSet.return_air.captured_at;
+      }
+      // Supply Air
+      if (snapSet.supply_air) {
+        cacheSet.supply_air.val = snapSet.supply_air.temp;
+        cacheSet.supply_air.capturedAt = snapSet.supply_air.captured_at;
+      }
+      // Outdoor Ambient
+      if (snapSet.outdoor_ambient) {
+        cacheSet.outdoor_ambient.val = snapSet.outdoor_ambient.temp;
+        cacheSet.outdoor_ambient.capturedAt = snapSet.outdoor_ambient.captured_at;
+      }
+      // Discharge Air
+      if (snapSet.discharge_air) {
+        cacheSet.discharge_air.val = snapSet.discharge_air.temp;
+        cacheSet.discharge_air.capturedAt = snapSet.discharge_air.captured_at;
+      }
+      // Suction Line
+      if (snapSet.suction_line) {
+        cacheSet.suction_line.pipeTemp = snapSet.suction_line.pipe_temp;
+        cacheSet.suction_line.capturedAt = snapSet.suction_line.captured_at;
+        if (snapSet.calculations && snapSet.calculations.suction_saturation_temp !== undefined) {
+          cacheSet.suction_line.dialSatTemp = snapSet.calculations.suction_saturation_temp;
+        }
+      }
+      // Liquid Line
+      if (snapSet.liquid_line) {
+        cacheSet.liquid_line.pipeTemp = snapSet.liquid_line.pipe_temp;
+        cacheSet.liquid_line.capturedAt = snapSet.liquid_line.captured_at;
+        if (snapSet.calculations && snapSet.calculations.liquid_saturation_temp !== undefined) {
+          cacheSet.liquid_line.dialSatTemp = snapSet.calculations.liquid_saturation_temp;
+        }
+      }
+    };
+
+    loadSet(this.currentSnapshot.before_set, this.device.cache.before);
+    loadSet(this.currentSnapshot.after_set, this.device.cache.after);
   }
 
   // Push target ranges and refrigerant from App back to Device
@@ -147,17 +225,15 @@ export class HvacStateMachine {
     }
 
     if (snap.equipment && snap.equipment.model_number) {
-      // Model-specific targets
       const model = snap.equipment.model_number;
       if (model.startsWith('GSX')) {
-        this.device.display.targetSH = '10-14 (Fact)';
-        this.device.display.targetSC = '9-11 (Fact)';
+        this.device.display.targetSH = '10-14 (Conf)';
+        this.device.display.targetSC = '9-11 (Conf)';
       } else {
-        this.device.display.targetSH = '8-12 (Fact)';
-        this.device.display.targetSC = '10-13 (Fact)';
+        this.device.display.targetSH = '8-12 (Conf)';
+        this.device.display.targetSC = '10-13 (Conf)';
       }
     } else {
-      // Generic fallback ranges
       this.device.display.targetSH = '8-15 (Gen)';
       this.device.display.targetSC = '8-12 (Gen)';
     }
@@ -183,6 +259,24 @@ export class HvacStateMachine {
 
     // Load BLE icon status
     disp.bleIcon = this.bleConnected ? '📶' : '';
+
+    // Dynamically update LED Checklist Statuses (V3 update)
+    const getLedStatus = (slotName, val) => {
+      if (this.device.sensorFaults[slotName]) {
+        return 'YELLOW_FLASH';
+      }
+      if (val !== null && val !== undefined) {
+        return 'GREEN_SOLID';
+      }
+      return 'YELLOW_SOLID';
+    };
+
+    this.device.leds.return_air = getLedStatus('return_air', cache.return_air.val);
+    this.device.leds.supply_air = getLedStatus('supply_air', cache.supply_air.val);
+    this.device.leds.outdoor_ambient = getLedStatus('outdoor_ambient', cache.outdoor_ambient.val);
+    this.device.leds.discharge_air = getLedStatus('discharge_air', cache.discharge_air.val);
+    this.device.leds.suction_line = getLedStatus('suction_line', cache.suction_line.pipeTemp);
+    this.device.leds.liquid_line = getLedStatus('liquid_line', cache.liquid_line.pipeTemp);
 
     // Calculate metrics
     this.recalculateDeviceMetrics();
@@ -271,6 +365,7 @@ export class HvacStateMachine {
         event: 'SENSOR_FAULT',
         details: `Slot: ${slot} reports open-circuit failure.`
       });
+      this.syncDeviceDisplayFromCache();
       return false;
     }
 
@@ -303,6 +398,7 @@ export class HvacStateMachine {
         event: 'SENSOR_FAULT',
         details: `Slot: ${slot} reports open-circuit probe failure.`
       });
+      this.syncDeviceDisplayFromCache();
       return false;
     }
 
@@ -637,7 +733,7 @@ export class HvacStateMachine {
     return { success: true, count: syncCount };
   }
 
-  // Create revision of a previously finalized snapshot
+  // Create revision of a previously finalized snapshot (V3 update: copies all data)
   createRevisionOf(snapshotId) {
     const matches = this.db.snapshots.filter(s => s.snapshot_id === snapshotId);
     if (matches.length === 0) {
@@ -680,13 +776,43 @@ export class HvacStateMachine {
       manufacturer: manufacturer,
       equipment_type: type
     };
-    
+    this.currentSnapshot.ocr_status = 'OCR_SUCCESS';
     this.currentSnapshot.updated_at = this.currentTime.toISOString();
     
     // Sync targets and display
     this.syncDeviceTargetsFromApp();
     this.syncDeviceDisplayFromCache();
     
+    return { success: true };
+  }
+
+  // Manual Override of Equipment Details (V3 OCR Instrumentation)
+  manualOverrideEquipment(model, serial, manufacturer = 'Carrier', type = 'Split AC Condenser') {
+    if (!this.currentSnapshot) {
+      return { success: false, reason: 'No active draft snapshot to edit.' };
+    }
+
+    // Set instrumentation status to MANUAL_OVERRIDE (Item 4)
+    this.currentSnapshot.ocr_status = 'MANUAL_OVERRIDE';
+    this.currentSnapshot.equipment = {
+      model_number: model,
+      serial_number: serial,
+      manufacturer: manufacturer,
+      equipment_type: type
+    };
+    this.currentSnapshot.updated_at = this.currentTime.toISOString();
+
+    // Log the manual override telemetry event in device NVS
+    this.device.nvsLogs.push({
+      timestamp: this.currentTime.toISOString(),
+      event: 'OCR_MANUAL_OVERRIDE',
+      details: `Technician manually typed model: ${model}, serial: ${serial}`
+    });
+
+    // Sync targets and display
+    this.syncDeviceTargetsFromApp();
+    this.syncDeviceDisplayFromCache();
+
     return { success: true };
   }
 

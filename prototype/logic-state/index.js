@@ -17,7 +17,7 @@ const C = {
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
-  blue: '\x1b[34' + 'm',
+  blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
   white: '\x1b[37m',
@@ -31,12 +31,20 @@ function clearScreen() {
   process.stdout.write('\x1Bc'); // Clear terminal and reset cursor
 }
 
-function ledStatusStr(active) {
-  return active ? `${C.green}● ON${C.reset}` : `${C.dim}○ OFF${C.reset}`;
+function activeLedStr(active) {
+  return active ? `${C.green}● ACTIVE${C.reset}` : `${C.dim}○ OFF${C.reset}`;
 }
 
-function sensorLedStr(fault) {
-  return fault ? `${C.red}♦ FAULT (RED)${C.reset}` : `${C.green}● HEALTHY (GRN)${C.reset}`;
+function ledStr(status) {
+  switch (status) {
+    case 'GREEN_SOLID':
+      return `${C.green}● GREEN (Captured)${C.reset}`;
+    case 'YELLOW_FLASH':
+      return `${C.yellow}♦ FLASHING YELLOW (Fault)${C.reset}`;
+    case 'YELLOW_SOLID':
+    default:
+      return `${C.yellow}● YELLOW (Needs Capture)${C.reset}`;
+  }
 }
 
 // Generate random temperatures in range
@@ -63,7 +71,7 @@ function render() {
   const timeStr = sim.currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = sim.currentTime.toISOString().split('T')[0];
 
-  console.log(`${C.bgBlue}${C.white}${C.bold}  HVAC HELPER PRO — LOGIC STATE MACHINE SIMULATOR (V2)  ${C.reset}  Time: ${C.bold}${dateStr} ${timeStr}${C.reset} (+${sim.timeOffsetMinutes} min)`);
+  console.log(`${C.bgBlue}${C.white}${C.bold}  HVAC HELPER PRO — LOGIC STATE MACHINE SIMULATOR (V3)  ${C.reset}  Time: ${C.bold}${dateStr} ${timeStr}${C.reset} (+${sim.timeOffsetMinutes} min)`);
   console.log(`${C.dim}─────────────────────────────────────────────────────────────────────────────${C.reset}`);
 
   // System Environment Panel
@@ -95,11 +103,13 @@ function render() {
 
   // Physical Hardware Controls & LEDs
   const switchPos = sim.device.physicalSwitchPosition;
-  console.log(`  ${C.bold}Hardware LEDs:${C.reset}   BEFORE: [${ledStatusStr(switchPos === 'before')}]     AFTER: [${ledStatusStr(switchPos === 'after')}]   (Toggled by TAB switch)`);
+  console.log(`  ${C.bold}Hardware switch:${C.reset} BEFORE: [${activeLedStr(switchPos === 'before')}]     AFTER: [${activeLedStr(switchPos === 'after')}]   (Toggled by TAB switch)`);
   
-  const faults = sim.device.sensorFaults;
-  console.log(`  ${C.bold}Sensor Faults:${C.reset} Return: [${sensorLedStr(faults.return_air)}]  Supply: [${sensorLedStr(faults.supply_air)}]  Outdoor: [${sensorLedStr(faults.outdoor_ambient)}]`);
-  console.log(`                 Dischg: [${sensorLedStr(faults.discharge_air)}]  Suctn : [${sensorLedStr(faults.suction_line)}]  Liquid : [${sensorLedStr(faults.liquid_line)}]`);
+  const leds = sim.device.leds;
+  console.log(`  ${C.bold}Hardware Sensor Checklist LEDs:${C.reset}`);
+  console.log(`    Return Air (RA): [${ledStr(leds.return_air).padEnd(25)}]  Supply Air (SA): [${ledStr(leds.supply_air).padEnd(25)}]`);
+  console.log(`    Outdoor Amb(OA): [${ledStr(leds.outdoor_ambient).padEnd(25)}]  Discharge Air(DA): [${ledStr(leds.discharge_air).padEnd(25)}]`);
+  console.log(`    Suction Line(SL): [${ledStr(leds.suction_line).padEnd(25)}]  Liquid Line (LL): [${ledStr(leds.liquid_line).padEnd(25)}]`);
   console.log(`${C.dim}─────────────────────────────────────────────────────────────────────────────${C.reset}`);
 
   // Mobile App View
@@ -114,11 +124,17 @@ function render() {
     const consumablesText = snap.consumables && snap.consumables.length > 0 
       ? `${C.green}${snap.consumables.join(', ')}${C.reset}` 
       : `${C.dim}NONE (LLM itemized)${C.reset}`;
+      
+    // Format OCR status with colors
+    let ocrStatusFormatted = '';
+    if (snap.ocr_status === 'PENDING') ocrStatusFormatted = `${C.dim}PENDING${C.reset}`;
+    else if (snap.ocr_status === 'OCR_SUCCESS') ocrStatusFormatted = `${C.green}OCR_SUCCESS${C.reset}`;
+    else ocrStatusFormatted = `${C.yellow}${C.bold}MANUAL_OVERRIDE (Instrumentation signal active)${C.reset}`;
 
     console.log(`  Current Draft Snapshot ID:  ${C.bold}${snap.snapshot_id}${C.reset}`);
-    console.log(`  Status:    ${C.cyan}${C.bold}${snap.status}${C.reset}  |  Revision: ${C.bold}${snap.revision}${C.reset}  |  Refrigerant: ${reqText}`);
-    console.log(`  Equipment: Model: ${eqModel}  |  Serial: ${eqSerial}`);
-    console.log(`  LLM Notes: [${notes}]  |  Consumables: [${consumablesText}]`);
+    console.log(`  Status:     ${C.cyan}${C.bold}${snap.status}${C.reset}  |  Revision: ${C.bold}${snap.revision}${C.reset}  |  Refrigerant: ${reqText}`);
+    console.log(`  Equipment:  Model: ${eqModel}  |  Serial: ${eqSerial}  |  OCR Status: ${ocrStatusFormatted}`);
+    console.log(`  LLM Notes:  [${notes}]  |  Consumables: [${consumablesText}]`);
     
     // Render status of each data point in the active set
     const setKey = sim.activeSet;
@@ -150,7 +166,7 @@ function render() {
     console.log(`    OA: ${ptStatus('outdoor_ambient').padEnd(45)} DA: ${ptStatus('discharge_air')}`);
     console.log(`    SL: ${ptStatus('suction_line').padEnd(45)} LL: ${ptStatus('liquid_line')}`);
 
-    // Performance Delta Summary (Item 9 / Option A)
+    // Performance Delta Summary (Before vs After)
     const beforeSet = snap.before_set;
     const afterSet = snap.after_set;
     if (beforeSet && afterSet && beforeSet.calculations && afterSet.calculations) {
@@ -201,10 +217,10 @@ function render() {
   console.log(`   [7] Dial LL Sat Saturation -5°  [8] LL Clamp Push (Confirm/Probe)`);
   console.log(`   [TAB] Toggle Physical Switch (${C.bold}BEFORE / AFTER${C.reset})`);
   console.log(`  ${C.bold}MOCKS, LOGS & DIAGNOSTICS:${C.reset}`);
-  console.log(`   [e] Photo Capture (OCR Model)   [n] Add/Mock Required Notes     [f] Finalize Snapshot`);
-  console.log(`   [s] Sync Outbox to Cloud        [b] Toggle BLE Connection       [x] Toggle BLE Failure Mode`);
-  console.log(`   [w] Toggle Network Connection   [t] Tick +1 Minute              [m] Tick +21 Minutes (Expire)`);
-  console.log(`   [o] Change Timeout Duration     [y] Toggle simulated Sensor Faults`);
+  console.log(`   [e] Photo Capture (OCR Scan)    [u] OCR Manual Override         [n] Add/Mock Required Notes`);
+  console.log(`   [f] Finalize Snapshot           [s] Sync Outbox to Cloud        [b] Toggle BLE Connection`);
+  console.log(`   [x] Toggle BLE Failure Mode     [w] Toggle Network Connection   [t] Tick +1 Minute`);
+  console.log(`   [m] Tick Expire (Timeout)       [o] Change Timeout Duration     [y] Toggle simulated Sensor Faults`);
   console.log(`   [r] Create Snapshot Revision    [c] Reset Simulator State       [q] Quit Simulation`);
 }
 
@@ -224,7 +240,7 @@ process.stdin.on('data', (key) => {
   if (key === '\t') {
     const nextPos = sim.device.physicalSwitchPosition === 'before' ? 'after' : 'before';
     sim.togglePhysicalSwitch(nextPos);
-    setNotification(`Physical switch slid to: ${nextPos.toUpperCase()}. Swapped display context and re-transmitted cache.`, C.yellow);
+    setNotification(`Physical switch slid to: ${nextPos.toUpperCase()}. Context-swapped display & synced app focus.`, C.yellow);
     render();
     return;
   }
@@ -273,9 +289,27 @@ process.stdin.on('data', (key) => {
       const idx = Math.floor(Math.random() * models.length);
       const resOCR = sim.mockPhotoCapture(models[idx], Math.floor(Math.random() * 900000000 + 100000000).toString(), manufacturers[idx], 'Split AC System');
       if (resOCR.success) {
-        setNotification('Photo Capture OCR triggered: Synced model-specific target ranges to hardware screen over BLE.', C.green);
+        setNotification('Photo Capture OCR success: Synced refrigerant and Confirmed ranges to device display.', C.green);
       } else {
         setNotification(`OCR Failed: ${resOCR.reason}`, C.red);
+      }
+      break;
+    case 'u':
+    case 'U':
+      // Manual Override edit (Item 4)
+      const overrideModels = ['MCH4321A', 'N2H436G', 'PA13NA036'];
+      const overrideMfrs = ['Carrier', 'Amana', 'Payne'];
+      const uIdx = Math.floor(Math.random() * overrideModels.length);
+      const resOverride = sim.manualOverrideEquipment(
+        overrideModels[uIdx],
+        Math.floor(Math.random() * 900000000 + 100000000).toString(),
+        overrideMfrs[uIdx],
+        'Split AC System'
+      );
+      if (resOverride.success) {
+        setNotification('OCR Manual Override recorded: Captured manual metadata and flagged MANUAL_OVERRIDE.', C.yellow);
+      } else {
+        setNotification(`Manual Override Failed: ${resOverride.reason}`, C.red);
       }
       break;
     case 'n':
@@ -283,7 +317,7 @@ process.stdin.on('data', (key) => {
       const mockNotes = 'Cleaned indoor evaporator coil. Replaced 16x25x1 filter. Dialed in refrigerant sat temps and verified superheat and subcooling are within factory specs.';
       const resNotes = sim.mockNotesExpansion(mockNotes, ['16x25x1 Filter', 'Refrigerant R-410A (0.5 lbs)']);
       if (resNotes.success) {
-        setNotification('LLM Notes expansion completed: Structured service record notes captured successfully.', C.green);
+        setNotification('LLM Notes expansion completed: Required technician notes captured successfully.', C.green);
       } else {
         setNotification(`Notes failed: ${resNotes.reason}`, C.red);
       }
@@ -360,7 +394,7 @@ process.stdin.on('data', (key) => {
         const lastSnap = sim.db.snapshots[sim.db.snapshots.length - 1];
         const resRev = sim.createRevisionOf(lastSnap.snapshot_id);
         if (resRev.success) {
-          setNotification(`Created Revision draft of Snapshot ${lastSnap.snapshot_id.substring(0, 8)}... (Revision #${resRev.revision}).`, C.green);
+          setNotification(`Created Revision draft of Snapshot ${lastSnap.snapshot_id.substring(0, 8)}... (Revision #${resRev.revision}). Inherited all parent calculations.`, C.green);
         } else {
           setNotification(`Revision Failed: ${resRev.reason}`, C.red);
         }
@@ -380,4 +414,4 @@ process.stdin.on('data', (key) => {
 
 // Initial Render
 render();
-console.log(`\n  ${C.bold}Simulator V2 initialized!${C.reset} Press any key listed in the menu to interact.`);
+console.log(`\n  ${C.bold}Simulator V3 initialized!${C.reset} Press any key listed in the menu to interact.`);
