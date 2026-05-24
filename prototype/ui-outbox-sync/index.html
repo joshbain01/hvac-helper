@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HVAC Helper Pro - Outbox Sync</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#eef3f7;color:#17212b}header{background:#12344f;color:white;padding:18px 22px}h1{margin:0;font-size:21px}p{line-height:1.45}.wrap{display:grid;grid-template-columns:290px 1fr;gap:16px;padding:18px}.panel,.surface{background:white;border:1px solid #c8d3dd;border-radius:8px;padding:16px}.controls{display:grid;gap:10px}.controls button{min-height:44px;border:1px solid #8da3b7;background:#f8fbfd;border-radius:6px;font-weight:700}.controls button.active{outline:3px solid #f1b84b}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f6f9fc;border:1px solid #d8e1e9;border-radius:6px;padding:12px}.metric strong{font-size:24px;display:block}.list{display:grid;gap:10px;margin-top:14px}.row{display:grid;grid-template-columns:110px 1fr 120px;gap:10px;align-items:center;border:1px solid #d8e1e9;border-radius:6px;padding:12px}.badge{font-weight:800;padding:8px;border-radius:6px;text-align:center}.draft{background:#fff7df;color:#735400}.queued{background:#eaf1ff;color:#1c4f8f}.syncing{background:#e7f6ee;color:#197348}.error{background:#fde8e5;color:#b42318}.compact .row{grid-template-columns:80px 1fr;font-size:13px}.logs{font-family:Consolas,monospace;background:#102a43;color:white;border-radius:6px;padding:12px;min-height:260px}.state{font-size:12px;white-space:pre-wrap;background:#f6f9fc;border:1px solid #d8e1e9;border-radius:6px;padding:10px}.footerbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:#102a43;padding:8px;border-radius:8px}.footerbar button{color:white;background:#284b66;border:1px solid #496a84;border-radius:6px;min-height:38px}@media(max-width:820px){.wrap,.summary,.row{grid-template-columns:1fr}.footerbar{position:static;transform:none;margin:0 18px 18px}}
+  </style>
+</head>
+<body>
+  <header><h1>SQLite Outbox Sync Status Prototype</h1><p>Question: how should the app show drafts, queued finalized jobs, uploads, and sync errors under harsh glare?</p></header>
+  <main class="wrap">
+    <aside class="panel controls">
+      <button data-view="bars" class="active">Status Bars</button>
+      <button data-view="badges">High-Contrast Badges</button>
+      <button data-view="logs">Fleet Log Table</button>
+      <button id="tick">Advance Sync</button>
+      <button id="fail">Inject Error</button>
+      <button id="reset">Reset</button>
+      <pre class="state" id="state"></pre>
+    </aside>
+    <section class="surface" id="surface"></section>
+  </main>
+  <nav class="footerbar"><button data-view="bars">Bars</button><button data-view="badges">Badges</button><button data-view="logs">Logs</button></nav>
+  <script>
+    const base=[['DRAFT','JOB-991A','Missing service notes'],['QUEUED','JOB-992B','Ready for upload'],['SYNCING','JOB-993C','Uploading photos'],['ERROR','JOB-994D','HTTP 503 retry in 2m']];
+    const state={view:'bars',jobs:base.map(([status,id,detail],i)=>({status,id,detail,tries:i===3?3:0}))};
+    const cls=s=>s.toLowerCase();
+    function counts(){return state.jobs.reduce((a,j)=>(a[j.status]=(a[j.status]||0)+1,a),{})}
+    function rows(compact=false){return `<div class="list ${compact?'compact':''}">`+state.jobs.map(j=>`<div class="row"><span class="badge ${cls(j.status)}">${j.status}</span><strong>${j.id}</strong>${compact?'':`<span>${j.detail}</span>`}</div>`).join('')+`</div>`}
+    function render(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));document.getElementById('state').textContent=JSON.stringify(state,null,2);const c=counts();let html=`<div class="summary">${['DRAFT','QUEUED','SYNCING','ERROR'].map(k=>`<div class="metric"><span>${k}</span><strong>${c[k]||0}</strong></div>`).join('')}</div>`; if(state.view==='bars') html+=rows(false); if(state.view==='badges') html+=rows(true); if(state.view==='logs') html+=`<pre class="logs">${state.jobs.map(j=>`${new Date().toISOString()} ${j.id} ${j.status.padEnd(7)} tries=${j.tries} ${j.detail}`).join('\n')}</pre>`;document.getElementById('surface').innerHTML=html}
+    document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render()});document.getElementById('tick').onclick=()=>{state.jobs=state.jobs.map(j=>j.status==='QUEUED'?{...j,status:'SYNCING',detail:'Uploading snapshot'}:j.status==='SYNCING'?{...j,status:'SYNCED',detail:'Uploaded'}:j).filter(j=>j.status!=='SYNCED');render()};document.getElementById('fail').onclick=()=>{state.jobs.push({status:'ERROR',id:`JOB-${Math.floor(900+Math.random()*99)}X`,detail:'Signature rejected',tries:1});render()};document.getElementById('reset').onclick=()=>{state.jobs=base.map(([status,id,detail],i)=>({status,id,detail,tries:i===3?3:0}));render()};render();
+  </script>
+</body>
+</html>

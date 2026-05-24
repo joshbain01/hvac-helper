@@ -35,6 +35,15 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [SQLite Outbox Sync Status & Error States](ui-outbox-sync)
+*   **Directory**: [`prototype/ui-outbox-sync`](ui-outbox-sync)
+*   **Question Answered**: How should the app visually represent draft snapshots, queued finalized jobs, active background uploads, and sync error states under harsh glare?
+*   **Type**: Web Application Prototype (HTML/CSS/JS)
+*   **Run Command**:
+    ```bash
+    npm run prototype:ui-outbox-sync
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
@@ -82,12 +91,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:logic-ble-binary`
 *   **Question to Answer**: How can we pack the 6 raw values, 2 dial values, calculated metrics, and sensor states into a compact binary payload to fit within a single BLE packet?
 *   **Description**: Serialization test script comparing custom bit-packed buffers vs. standard JSON layouts to measure compression and speed.
-
-### 10. [PLANNED] SQLite Outbox Sync Status & Error States (UI Prototype)
-*   **Target Directory**: `prototype/ui-outbox-sync`
-*   **Run Command**: `npm run prototype:ui-outbox-sync`
-*   **Question to Answer**: How should the app visually represent draft snapshots, queued finalized jobs, active background uploads, and sync error states under harsh glare?
-*   **Description**: Web views showing list options: standard bars, high-contrast multi-sensory color-blind badges, and a compact fleet manager logs table.
 
 ### 11. [PLANNED] Physical BEFORE/AFTER Switch Context-Swap (Logic Prototype)
 *   **Target Directory**: `prototype/logic-before-after`
