@@ -30,7 +30,7 @@ Use the following metrics to measure the success of the HVAC Helper Pro system. 
 
 Focus the MVP on core value by excluding the following features from scope:
 
-*   **Touchscreen Interface**: You do not design a touchscreen UI. The handheld device uses physical buttons, rotary encoders, and fixed mini-OLED displays.
+*   **Touchscreen Interface**: You do not design a touchscreen UI. The handheld device uses physical buttons, rotary encoders, and a single top display.
 *   **Built-In Pressure Sensors**: You do not measure refrigerant pressure directly. You dial in refrigerant saturation temperatures manually using the rotary encoders based on your physical pressure gauges.
 *   **Direct Cloud Sync**: The handheld device does not connect directly to cellular networks or Wi-Fi. You transmit data locally to the mobile application via Bluetooth Low Energy (BLE), and the mobile app handles cloud synchronization.
 *   **Advanced Diagnostics**: The system calculates only target parameters derived from the core data set (Evaporator Delta T, Superheat, and Subcooling) and does not perform automated component-level diagnostics.
@@ -112,28 +112,30 @@ graph LR
 You capture measurements using a rugged, IP-54 sealed handheld unit (~200g) featuring:
 *   **Sensors**: A built-in Sensirion SHT40 temperature/humidity sensor and two 3.5mm ports for external pipe clamp temperature probes.
 *   **Controls**: Four physical tactile **buttons** (Return Air, Supply Air, Outdoor Ambient, and Discharge Air) and two digital **rotary encoders** with integrated push-buttons (Suction Line and Liquid Line).
-*   **Displays**: Six mini-OLED screens (128x32) displaying live values and connection status, routed via a TCA9548A **I2C Multiplexer**, and a top-line OLED display showing calculated values.
-*   **Indicators**: Six RGB status LEDs displaying transmission progress and confirmations, utilizing unique blinking and flashing profiles to support accessibility.
+*   **Displays**: A single high-contrast 128x64 display at the top of the handheld device displaying all raw measurements, saturation dials, calculations, and active target ranges.
+*   **Progress LEDs**: Six two-color (Yellow/Green) visual indicators next to each button or rotary encoder representing the capture state. It glows solid yellow if a reading is missing (needs capture), solid green when captured successfully, and flashes yellow if there is a sensor/probe fault.
+*   **Physical Switch**: A BEFORE/AFTER slide switch that context-swaps display values and progress LEDs, and triggers a BLE re-transmission of all cached values in the selected set for sync recovery.
 *   **Power**: A 2000mAh rechargeable Li-Po battery charging via USB-C, waking from deep sleep via button press or encoder push interrupts (GPIO EXT1).
 
 ### 6.2 Firmware
 
 The ESP32 firmware manages local operations:
 *   **Sensor Capture**: Reads digital temperature/humidity and analog clamp probe signals.
-*   **Display Updates**: Performs sequential I2C writes to update the display array and top calculation display.
+*   **Display Updates**: Performs updates to the Top Display via I2C.
 *   **Local Calculations**: Computes Evaporator Delta T, Superheat, and Subcooling instantly using simple subtraction of captured and dialed-in values.
 *   **BLE Assembly**: Packs measurements into structured payloads and handles transmission retries.
-*   **Safety & Diagnostics**: Employs a hardware watchdog (5s) with reset-cause logging in non-volatile storage (NVS), check hooks for stack overflow, sleep caching of active measurements, and a dual-partition OTA rollback system requiring a BLE handshake confirmation loop with physical button rollback override (holding RA and SA for 5s during power-up).
+*   **Safety & Diagnostics**: Employs a hardware watchdog (5s) with reset-cause logging in non-volatile storage (NVS), check hooks for stack overflow, sleep caching of active measurements (context-swapped based on the BEFORE/AFTER switch position), and a dual-partition OTA rollback system requiring a BLE handshake confirmation loop with physical button rollback override (holding RA and SA for 5s during power-up).
 
 ### 6.3 Mobile App
 
 You interface with the handheld using the iOS and Android application:
 *   **Architecture**: Native SwiftUI (iOS) and Jetpack Compose (Android) frontends combined with a shared React Native logic layer.
-*   **Local Caching**: Stores in-progress snapshots in a local SQLite database (offline-first).
+*   **Local Caching**: Stores in-progress snapshots in a local SQLite database (offline-first). Creating a new revision clones all parent snapshot data (measurements and calculations) to allow simple metadata edits.
 *   **Communications**: Manages the BLE transmission queue, retrying failed packets within the 3-second **Transfer Latency** window.
 *   **On-Device Processing**: Runs local optical character recognition (OCR) via Apple Vision or Google ML Kit and voice notes transcription via native speech-to-text.
+*   **OCR Status Telemetry**: Tracks the extraction status using an `ocr_status` field (`PENDING`, `OCR_SUCCESS`, `MANUAL_OVERRIDE`) in the snapshot metadata. If a technician overrides the parsed nameplate details manually, the state is recorded as `MANUAL_OVERRIDE` and logged as telemetry.
 *   **Local Inference**: Employs on-device small language models (Apple's local models and Android's AICore) coupled with a local SQLite FTS5 index to parse notes and check technical manuals offline.
-*   **UI Views**: Features a step-by-step "Guided Mode" with placement guides for apprentices and a rapid "Expert Mode" grid layout for lead technicians.
+*   **UI Views**: Features a step-by-step "Guided Mode" with placement guides for apprentices and a rapid "Expert Mode" grid layout for lead technicians. Notes are mandatory before a snapshot can be finalized.
 
 ### 6.4 Cloud Backend
 
@@ -150,27 +152,27 @@ The cloud services provide secure synchronization:
 
 1.  **Record Return Air (RA)**
     *   *Story*: As a Field Service Technician, I want to press the **Return Air (RA)** button to capture the temperature and humidity of the air entering the indoor evaporator coil.
-    *   *Acceptance Criteria*: You press the button to initiate the measurement; the associated status LED pulses amber during transmission and turns solid green within 3 seconds; the mini-OLED displays the captured value; the value syncs to the mobile app's active Draft.
+    *   *Acceptance Criteria*: You press the button to initiate the measurement; the associated progress LED turns solid green from yellow within 3 seconds of confirmation; the top display updates to show the captured value; the value syncs to the mobile app's active Draft.
 
 2.  **Record Supply Air (SA)**
     *   *Story*: As a Field Service Technician, I want to press the **Supply Air (SA)** button to capture the temperature of the air leaving the evaporator coil.
-    *   *Acceptance Criteria*: You press the button to capture the temperature; the LED pulses amber during transmission and turns solid green within 3 seconds; the mini-OLED displays the value; the value syncs to the mobile app's active Draft.
+    *   *Acceptance Criteria*: You press the button to capture the temperature; the progress LED turns solid green from yellow within 3 seconds; the top display updates to show the value; the value syncs to the mobile app's active Draft.
 
 3.  **Record Outdoor Ambient (OA)**
     *   *Story*: As a Field Service Technician, I want to press the **Outdoor Ambient (OA)** button to capture the temperature of the air entering the condenser coil.
-    *   *Acceptance Criteria*: You press the button to capture the temperature; the LED pulses amber during transmission and turns solid green within 3 seconds; the mini-OLED displays the value; the value syncs to the mobile app's active Draft.
+    *   *Acceptance Criteria*: You press the button to capture the temperature; the progress LED turns solid green from yellow within 3 seconds; the top display updates to show the value; the value syncs to the mobile app's active Draft.
 
 4.  **Record Discharge Air (DA)**
     *   *Story*: As a Field Service Technician, I want to press the **Discharge Air (DA)** button to capture the temperature of the air leaving the condenser fan outlet.
-    *   *Acceptance Criteria*: You press the button to capture the temperature; the LED pulses amber during transmission and turns solid green within 3 seconds; the mini-OLED displays the value; the value syncs to the mobile app's active Draft.
+    *   *Acceptance Criteria*: You press the button to capture the temperature; the progress LED turns solid green from yellow within 3 seconds; the top display updates to show the value; the value syncs to the mobile app's active Draft.
 
 5.  **Dial Suction Line (SL) Saturation and Measure Suction Pipe Temperature**
     *   *Story*: As a Field Service Technician, I want to turn the **Suction Line (SL)** rotary encoder to match my physical pressure gauge's saturation temperature and push the dial to capture the suction pipe temperature.
-    *   *Acceptance Criteria*: You turn the dial to adjust the displayed saturation temperature on the mini-OLED; you push the dial to capture the external clamp probe temperature and confirm both values; the status LED pulses amber and turns solid green within 3 seconds; both values sync to the active Draft.
+    *   *Acceptance Criteria*: You turn the dial to adjust the displayed saturation temperature on the top display; you push the dial to capture the external clamp probe temperature and confirm both values; the progress LED turns solid green from yellow within 3 seconds; both values sync to the active Draft.
 
 6.  **Dial Liquid Line (LL) Saturation and Measure Liquid Pipe Temperature**
     *   *Story*: As a Field Service Technician, I want to turn the **Liquid Line (LL)** rotary encoder to match my physical pressure gauge's saturation temperature and push the dial to capture the liquid pipe temperature.
-    *   *Acceptance Criteria*: You turn the dial to adjust the displayed saturation temperature on the mini-OLED; you push the dial to capture the external clamp probe temperature and confirm both values; the status LED pulses amber and turns solid green within 3 seconds; both values sync to the active Draft.
+    *   *Acceptance Criteria*: You turn the dial to adjust the displayed saturation temperature on the top display; you push the dial to capture the external clamp probe temperature and confirm both values; the progress LED turns solid green from yellow within 3 seconds; both values sync to the active Draft.
 
 7.  **Review Live Calculations**
     *   *Story*: As a Field Service Technician, I want to view calculated parameters on the handheld's top display to verify system charging.
@@ -197,8 +199,8 @@ The cloud services provide secure synchronization:
     *   *Acceptance Criteria*: You tap the submit action; the app validates that the **Before Set** and equipment data are fully populated, marks the snapshot as `DIAGNOSTIC_COMPLETE`, and queues it in the Outbox.
 
 13. **Finalize and Submit Completed Repairs**
-    *   *Story*: As a Field Service Technician, I want to submit a complete snapshot containing before and after measurements to prove my work.
-    *   *Acceptance Criteria*: You tap the submit action; the app validates that the **Before Set**, **After Set**, and equipment data are fully populated, marks the snapshot as `COMPLETED`, and queues it in the Outbox.
+    *   *Story*: As a Field Service Technician, I want to submit a complete snapshot containing before and after measurements along with automatically calculated performance deltas to prove my work.
+    *   *Acceptance Criteria*: You tap the submit action; the app validates that the **Before Set**, **After Set**, equipment data, and notes are fully populated, calculates before-to-after performance deltas (Delta T, Superheat, and Subcooling changes), marks the snapshot as `COMPLETED`, and queues it in the Outbox.
 
 14. **Process Invoices and Claims**
     *   *Story*: As an Office Administrator, I want to receive structured snapshot data automatically in our office CRM to process billing.
@@ -211,7 +213,7 @@ The cloud services provide secure synchronization:
 ### 8.1 Technical Performance
 
 *   **BLE Transmission Latency**: Ensure BLE transmission and confirmation complete within a 3-second window. The mobile app handles packet acknowledgment within 250ms of receipt.
-*   **Display Update Latency**: Update the mini-OLED displays within 100ms of button presses, encoder rotation, or sensor data retrieval.
+*   **Display Update Latency**: Update the Top Display within 100ms of button presses, encoder rotation, or sensor data retrieval.
 *   **App UI Thread Performance**: Maintain BLE event processing and UI thread rendering under 5ms per event to prevent frame drops.
 
 ### 8.2 Power Constraints
@@ -232,18 +234,14 @@ The cloud services provide secure synchronization:
 
 *   **Sunlight Theme Mode**: Provide a dedicated high-contrast theme featuring a pure black (`#000000`) on white (`#FFFFFF`) palette, yielding a **21:1 contrast ratio** readable in direct sunlight (10,000+ nits).
 *   **Touch Targets**: Set interactive app targets to a minimum dimension of **64px** and a minimum spacing gutter of **16px** to support glove-wearing technicians.
-*   **Color-Blind LED Indicators**: Ensure physical status LEDs use unique blinking and flashing frequencies to communicate state without relying solely on color:
-    *   *Confirmed (Green)*: Solid ON.
-    *   *Transmitting (Amber)*: Slow breathing pulse (1 Hz).
-    *   *Failure (Red)*: Rapid stroboscopic flash (4 Hz).
-*   **Color-Blind App Interface**: Ensure the mobile application matches the physical LED behavior by pairing state-based colors with distinct icons (`✔ Sent`, `⟳ Sending...`, `✘ Failed`) and custom border styles:
-    *   *Confirmed*: Thick solid border.
-    *   *Transmitting*: Animated dashed border.
-    *   *Failure*: Double-thickness solid border.
-*   **Haptic Mapping**: Trigger physical vibration cues to confirm transmission status:
+*   **Color-Blind LED Indicators**: Ensure physical progress LEDs communicate state unambiguously without relying solely on color. Since they act as a checklist next to physical controls, a missing measurement shows solid yellow (needs capture), a successfully captured measurement shows solid green, and a sensor fault flashes yellow at 2 Hz. The top display provides a backup visual list of captured values with clear text labels.
+*   **Color-Blind App Interface**: Ensure the mobile application matches the physical LED behavior by pairing state-based colors with distinct status labels (`Needs Capture`, `Captured`, `Fault`) and custom border styles:
+    *   *Needs Capture*: Thin dashed border.
+    *   *Captured*: Thick solid border with checkmark icon.
+    *   *Fault*: Double-thickness solid border with alert icon.
+*   **Haptic Mapping**: Trigger physical vibration cues to confirm capture and sync:
     *   *Success*: Single short tap (100ms).
-    *   *Transmitting*: Light pulsing pattern.
-    *   *Failure*: Double sharp pulse (200ms x 2).
+    *   *Fault/Alert*: Double sharp pulse (200ms x 2).
 *   **Reduced Motion**: Respect the OS setting `prefers-reduced-motion` by disabling CSS animations, replacing pulsing/flashing effects with static visual states.
 
 ---
@@ -255,7 +253,9 @@ The technical design details, architecture validation, and component selections 
 *   **Microcontroller Selection**: See [ADR-001 (ESP32 MCU)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0001-esp32-as-mcu.md).
 *   **Wireless Protocol**: See [ADR-002 (BLE Transport)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0002-ble-5-0-as-transport.md).
 *   **Pressure Interface**: See [ADR-003 (No Built-In Pressure Sensor)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0003-no-built-in-pressure-sensor.md).
-*   **Display Architecture**: See [ADR-004 (Per-Button Mini OLEDs vs. Single Display)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0004-per-button-mini-oleds-vs-single-display.md).
+*   **Display Architecture**: See [ADR-010 (Single Top Display)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0010-single-top-display.md) (which supersedes [ADR-0004](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0004-per-button-mini-oleds-vs-single-display.md)).
+*   **Progress LEDs and Switch**: See [ADR-011 (Progress Checklist LEDs and Switch)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0011-progress-checklist-leds-and-switch.md).
+*   **Revision Inheritance and OCR Telemetry**: See [ADR-012 (Revision Inheritance and OCR Telemetry)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0012-revision-inheritance-and-ocr-telemetry.md).
 *   **Mobile Framework**: See [ADR-005 (React Native Shared Logic & Native UI)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0005-rn-shared-logic-native-ui.md).
 *   **AI Hosting Strategy**: See [ADR-006 (LLM Hosting: Cloud vs. On-Device)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0006-llm-hosting-cloud-vs-on-device.md).
 *   **Data Synchronization**: See [ADR-007 (Snapshot Sync Semantics)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0007-snapshot-sync-semantics.md).
@@ -334,9 +334,12 @@ The following operational questions remain open and require validation during th
 | **ADR-001** | [ESP32 as MCU](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0001-esp32-as-mcu.md) | Proposed |
 | **ADR-002** | [BLE 5.0 as Transport](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0002-ble-5-0-as-transport.md) | Proposed |
 | **ADR-003** | [No Built-In Pressure Sensor](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0003-no-built-in-pressure-sensor.md) | Proposed |
-| **ADR-004** | [Per-Button Mini OLEDs vs. Single Display](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0004-per-button-mini-oleds-vs-single-display.md) | Proposed |
+| **ADR-004** | [Per-Button Mini OLEDs vs. Single Display](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0004-per-button-mini-oleds-vs-single-display.md) | Superseded |
 | **ADR-005** | [React Native Shared Logic & Native UI](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0005-rn-shared-logic-native-ui.md) | Proposed |
 | **ADR-006** | [LLM Hosting: Cloud vs. On-Device](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0006-llm-hosting-cloud-vs-on-device.md) | Proposed |
 | **ADR-007** | [Snapshot Sync Semantics](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0007-snapshot-sync-semantics.md) | Proposed |
 | **ADR-008** | [Cloud Auth & SSO](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0008-cloud-auth.md) | Proposed |
 | **ADR-009** | [OTA Update Verification & Signing](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0009-ota-update-model-signing.md) | Proposed |
+| **ADR-010** | [Single Top Display](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0010-single-top-display.md) | Accepted |
+| **ADR-011** | [Progress Checklist LEDs and Switch](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0011-progress-checklist-leds-and-switch.md) | Accepted |
+| **ADR-012** | [Revision Inheritance and OCR Telemetry](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0012-revision-inheritance-and-ocr-telemetry.md) | Accepted |
