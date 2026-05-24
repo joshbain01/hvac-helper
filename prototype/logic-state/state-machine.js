@@ -711,7 +711,7 @@ export class HvacStateMachine {
   // Trigger sync of outbox to cloud server
   syncOutbox() {
     if (!this.networkConnected) {
-      return { success: false, reason: 'No internet connection. Synced failed.' };
+      return { success: false, reason: 'No internet connection. Sync failed.' };
     }
 
     if (this.db.outbox.length === 0) {
