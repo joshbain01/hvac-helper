@@ -1,15 +1,19 @@
-# HVAC Helper Pro – Logic State Prototype
+# HVAC Helper Pro – Logic State Prototype (V2)
 
-This is a throwaway interactive console prototype designed to flesh out, validate, and test the state machine, hardware interactions, and local synchronization lifecycles of the HVAC Helper Pro system.
+This is an interactive console simulator (TUI) designed to validate, test, and model the hardware interfaces, state machines, and local synchronization lifecycles of the HVAC Helper Pro system.
 
-## ❓ The Questions Being Answered
+## ❓ The Questions Answered (V2 Updates)
 
-1. **Hardware-Software Timing & Timeout Integration**: How do physical button presses, BLE packet transfer latencies, and 20-minute before/after measurement timeouts behave together? If a technician takes 25 minutes to complete a repair, how do we handle point-level expirations?
-2. **Offline-First Synchronization Flow**: How do snapshots transition from `DRAFT` to `FINALIZED` (immutable locally, queued in SQLite outbox) to `SYNCED` (processed in cloud database)? How do revisions of finalized snapshots get tracked and linked?
+1. **Top-Mounted Single Display (Option B)**: How do we present 6 sensor channels and calculations side-by-side on a single 128x64 display using 6-character labels instead of confusing acronyms?
+2. **Standalone Operation**: How does the device function as a standalone calculator when BLE is disconnected? It displays calculations based on dial saturations and probe temperatures without needing an app.
+3. **Generic vs. Factory Ranges**: If the app hasn't scanned the service tag, the device displays generic standard defaults (`SH: 8-15`, `SC: 8-12`) labeled `(Gen)`. Once scanned, the app pushes model-specific ranges (e.g. `10-14 (Fact)`) back to the hardware display.
+4. **Physical Switch Context-Swap (Option A)**: Toggling the Before/After slide switch context-swaps screen displays (preventing confusion) and re-transmits all currently cached set readings to the mobile app.
+5. **Mandatory Notes Check**: Snapshots block finalization unless technician notes are captured.
+6. **Thermodynamic Performance Deltas**: The final CRM sync includes comparative changes (Before vs. After differences) for Delta T, Superheat, and Subcooling.
 
 ---
 
-## 🚀 How to Run the Prototype
+## 🚀 How to Run the Simulator
 
 Run the following command from the repository root:
 
@@ -24,37 +28,27 @@ npm run prototype:logic-state
 ## ⌨️ Simulator Keyboard Shortcuts
 
 ### Handheld Device Controls
-*   `[1]` **Return Air (RA)**: Capture room air temperature and humidity.
+*   `[1]` **Return Air (RA)**: Capture return air temperature and humidity.
 *   `[2]` **Supply Air (SA)**: Capture supply air temperature.
-*   `[3]` **Outdoor Ambient (OA)**: Capture condenser entry temperature.
-*   `[4]` **Discharge Air (DA)**: Capture condenser exhaust temperature.
-*   `[5]` **Dial Suction saturation temperature**: Decrements saturation dial by -2°F (simulates turning the left rotary encoder).
-*   `[6]` **Confirm SL (Push encoder dial)**: Captures suction pipe temperature via probe and locks the dial value.
-*   `[7]` **Dial Liquid saturation temperature**: Decrements saturation dial by -5°F (simulates turning the right rotary encoder).
-*   `[8]` **Confirm LL (Push encoder dial)**: Captures liquid pipe temperature via probe and locks the dial value.
-*   `[TAB]` **Toggle active focus**: Switch between capturing the `Before Set` and the `After Set` measurements.
+*   `[3]` **Outdoor Ambient (OA)**: Capture outdoor ambient temperature.
+*   `[4]` **Discharge Air (DA)**: Capture discharge air temperature.
+*   `[5]` **Dial SL Sat Saturation**: Decreases sat dial temp by -2°F.
+*   `[6]` **SL Clamp Push (Confirm/Probe)**: Captures suction line pipe temperature.
+*   `[7]` **Dial LL Sat Saturation**: Decreases sat dial temp by -5°F.
+*   `[8]` **LL Clamp Push (Confirm/Probe)**: Captures liquid line pipe temperature.
+*   `[TAB]` **Physical Before/After Switch**: Slids between BEFORE and AFTER mode, swapping display cache and re-syncing over BLE.
 
-### Companion App & Environment Simulators
-*   `[e]` **Mock Photo Capture (OCR)**: Extracts model/serial numbers from the unit nameplate.
-*   `[n]` **Mock LLM Note Expansion**: Summarizes the service description and lists consumables.
-*   `[f]` **Finalize Snapshot**: Validates inputs. If complete, marks snapshot as immutable and queues it in the Outbox.
-*   `[s]` **Sync Outbox**: Uploads all queued snapshots to the cloud server database.
-*   `[b]` **Toggle BLE Link**: Connect or disconnect the device-to-phone Bluetooth connection.
-*   `[x]` **Toggle BLE Failure Mode**: Simulate packet drops (forces ESP32 NVS logging and error LEDs).
-*   `[w]` **Toggle Internet Connection**: Toggle phone network connectivity (WiFi/LTE).
-*   `[t]` **Tick Time +1 Minute**: Advances simulation clock.
-*   `[m]` **Tick Time +21 Minutes**: Forces the 20-minute individual point timeout to expire.
-*   `[r]` **Create Revision**: Create a parent-linked draft of the last finalized snapshot to make edits.
-*   `[c]` **Reset Simulator**: Wipe all state and start fresh.
-*   `[q]` **Quit**: Exit the simulator.
-
----
-
-## ⚙️ Core State Rules Validated
-
-1. **Individual Point Expiration**: If a data point is captured and simulated time advances by more than 20 minutes, that specific data point is discarded (removed from the set). The other captured points remain intact.
-2. **Calculations**:
-    *   `Delta T` requires both RA and SA to display.
-    *   `Superheat` requires SL pipe temp and SL dial saturation temp.
-    *   `Subcooling` requires LL pipe temp and LL dial saturation temp.
-3. **Immutability & Outbox**: Finalizing a snapshot validates that all required parameters are present (either 6 points for before set diagnostic-only, or 12 points for completed before + after sets). Once finalized, the snapshot becomes immutable. Any edits must spawn a new snapshot with an incremented revision number, linked via `parent_id`.
+### Mobile App & Cloud Simulators
+*   `[e]` **Photo Capture (OCR)**: Scans nameplate. Identifies model/serial, loads refrigerant (`R-410A`), and pushes factory ranges to device display.
+*   `[n]` **Add Required Notes**: Captures LLM notes and auto-itemized consumables. (Must be done before finalization).
+*   `[f]` **Finalize Snapshot**: Validates completeness. Blocks if notes or before-set data are missing. Pushes to Outbox.
+*   `[s]` **Sync Outbox**: Uploads all Outbox snapshots to the cloud server database.
+*   `[b]` **Toggle BLE Connection**: Connect/disconnect BLE. When disconnected, BLE icon `📶` disappears, but device still functions.
+*   `[x]` **Toggle BLE Failure Mode**: Forces BLE transmission errors.
+*   `[y]` **Toggle Sensor Faults**: Simulates a sensor/probe fault (turns button LED red, logs failure in NVS).
+*   `[o]` **Change Timeout**: Adjusts snapshot timeout window dynamically (10, 20, 30, or 60 minutes).
+*   `[t]` **Tick +1 Minute**: Advances simulation clock.
+*   `[m]` **Tick Expire**: Advances time past the current timeout window to test point expiration.
+*   `[r]` **Create Snapshot Revision**: Creates a parent-linked draft of the last synced snapshot.
+*   `[c]` **Reset Simulator**: Resets all variables.
+*   `[q]` **Quit**: Exit simulation.
