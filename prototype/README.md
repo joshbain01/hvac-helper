@@ -35,6 +35,15 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [Homeowner PDF Service Report Layouts](ui-service-reports)
+*   **Directory**: [`prototype/ui-service-reports`](ui-service-reports)
+*   **Question Answered**: What layout maximizes homeowner clarity while clearly displaying HVAC system health and repair outcomes?
+*   **Type**: Web Application Prototype (HTML/CSS/JS)
+*   **Run Command**:
+    ```bash
+    npm run prototype:ui-service-reports
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
@@ -70,12 +79,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Run Command**: `npm run prototype:logic-pricing`
 *   **Question to Answer**: How do varying subscriber attach rates, LLM fallback API costs, and distributor margins affect break-even Economics?
 *   **Description**: Command-line sensitivity calculator that computes operating margins and break-even windows based on variable user/unit economic parameters.
-
-### 8. [PLANNED] Homeowner PDF Service Report Layouts (UI Prototype)
-*   **Target Directory**: `prototype/ui-service-reports`
-*   **Run Command**: `npm run prototype:ui-service-reports`
-*   **Question to Answer**: What layout maximizes the "wow" factor for homeowners while clearly displaying HVAC system health and repair outcomes?
-*   **Description**: Web generator producing three visual PDF themes: a color-coded graphic infographic, a detailed technical/compliance ledger, and an itemized work completed card.
 
 ### 9. [PLANNED] Compact Binary BLE Serialization Protocol (Logic Prototype)
 *   **Target Directory**: `prototype/logic-ble-binary`
