@@ -71,12 +71,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Question to Answer**: How does the firmware check individual hardware components (I2C OLED screen, Rotary Encoders, tactile Buttons, BLE, clamp probes) and enter degraded standalone modes on faults?
 *   **Description**: Console mockup simulating power-on checks, fault injection (e.g. stuck buttons, open probes), and error reporting.
 
-### 6. [PLANNED] FSM Webhook Integration & Custom Fields Mapper (Logic Prototype)
-*   **Target Directory**: `prototype/logic-fsm-sync`
-*   **Run Command**: `npm run prototype:logic-fsm-sync`
-*   **Question to Answer**: How do we transform raw local SQLite snapshots into invoices/work orders on ServiceTitan and Housecall Pro APIs, ensuring data consistency despite token expiry or custom field limits?
-*   **Description**: Node utility importing snapshot payloads, mapping before/after delta structures, and calling mock sandbox webhooks.
-
 ### 7. [PLANNED] Tiered SaaS & Pricing Sensitivity Model (Logic Prototype)
 *   **Target Directory**: `prototype/logic-pricing`
 *   **Run Command**: `npm run prototype:logic-pricing`
