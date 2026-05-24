@@ -81,8 +81,8 @@ Here is the directory structure of the repository:
 *   [docs/](file:///c:/Users/joshu/projects/hvac-helper-tool/docs): Comprehensive product documentation.
     *   [adr/](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr): Architecture Decision Records (ADRs 0001 - 0009).
     *   [css/](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/css): Compiled styles including the CSS variables manifest.
-    *   [PRD.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/PRD.md): Product Requirements Document for Handheld & Core features.
-    *   [prd-hvac-helper-pro-v2.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/prd-hvac-helper-pro-v2.md): Product Requirements Document (V2).
+    *   [PRD.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/PRD.md): Product Requirements Document - Active source of truth.
+    *   [archive/](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/archive): Archived old artifacts and PRD drafts.
     *   [design-system.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/design-system.md): Mobile Application Design System guidelines and specifications.
     *   [personas.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/personas.md): Target user persona definitions.
     *   [api-v1-snapshots.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/api-v1-snapshots.md): Cloud backend API v1 endpoints specification.

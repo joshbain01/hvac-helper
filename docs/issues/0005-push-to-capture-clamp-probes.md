@@ -8,12 +8,15 @@ AFK
 - `/agency-software-architect` (on-device mathematical validation)
 
 ## Reference Docs
-- [PRD.md - Section 8 & 9 (Local Calculations & Encoders)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/PRD.md#L110)
+- [PRD.md - Section 6.1, 6.2 & 7 (Clamp Probes & Saturation Dial-in)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/PRD.md#L116-L134)
 - [CONTEXT.md - Evaporator Delta T, Superheat, Subcooling definitions](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/CONTEXT.md#L14)
 - [ADR 0003: No Built-In Pressure Sensor](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0003-no-built-in-pressure-sensor.md)
 
 ## Prototype Lessons & Context
+
 Implement the thermodynamic formulas exactly as written in the prototype [recalculateDeviceMetrics](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/logic-state/state-machine.js#L286-L314). Note how Delta T = RA - SA; Superheat = Suction Pipe - Suction Sat; Subcooling = Liquid Sat - Liquid Pipe.
+
+This task corresponds to the existing [Logic State Simulator](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/logic-state) prototype and is validated by the planned [Hardware Power-On Self-Test (POST) Routine](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/README.md#5-planned-hardware-power-on-self-test-post-routine-logic-prototype) (`prototype/logic-self-test`) prototype.
 
 ## What to build
 Implement the push-button switch interrupts on the rotary encoder dials. Pushing a dial locks in the manual saturation temperature, queries the external pipe clamp temperature probe via ADC/one-wire, and performs local calculations on the ESP32. The calculated Delta T, Superheat, and Subcooling are drawn to the OLED Top Display immediately.
@@ -29,3 +32,26 @@ Implement the push-button switch interrupts on the rotary encoder dials. Pushing
 
 ## User stories covered
 User Story 6 (complete)
+
+## Testing Guidance
+
+### Unit Testing
+- **ADC Translation**: Verify raw analog-to-digital converter (ADC) voltage readings map to temperature outputs.
+- **Calibration Scaling**: Test calculation offset factors (gain, bias compensation) using mocked voltage streams.
+- **Event Dispatcher**: Test button-press captures and verify data point routing.
+
+### Baseline Testing (Regression Prevention)
+- **Performance & Latency Baseline**:
+  - Measure current consumption during wireless/analog measurement sampling.
+  - Record ADC sampling noise margin and read speed latency.
+- **Behavioral & Data Baseline**:
+  - Freeze a reference calibration table to detect offset calculation regressions.
+
+### Integration & Manual Verification
+- **Clamp Interaction**: Press the clamp push-to-capture button, checking that values immediately register on the OLED.
+- **Dual-Channel Verification**: Read return/liquid clamp inputs side-by-side, verifying independent state updates.
+
+## Definition of Done (DoD)
+- [ ] **Calibration Check**: Measured temperature values match precision reference standards (accuracy tolerance verified within $\pm$ 0.5°F).
+- [ ] **Unit Tests**: Calibration mathematical formulas and ADC translations pass unit testing.
+- [ ] **Hardware Release**: Verification that ADC/sampling channels release power lines when inactive.

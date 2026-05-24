@@ -14,6 +14,8 @@ HITL
 ## Prototype Lessons & Context
 Review the Counter display needs. The physical device placed on supply counters will run in a self-contained "Demo Mode" as simulated in the TUI [index.js](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/logic-state/index.js).
 
+This task is validated by the existing [Logic State Simulator](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/logic-state) prototype.
+
 ## What to build
 Reach out to wholesale HVAC distributors (Ferguson, Johnstone Supply) to negotiate distribution agreements. Validate discount rates (target 30% off MSRP), inventory buy-back policies, co-op advertising fee deductions, and design physical supply counter cardboard display packaging.
 
@@ -28,3 +30,25 @@ None - can start immediately
 
 ## User stories covered
 N/A (Go-To-Market)
+
+## Testing Guidance
+
+### Unit Testing
+- **Commission Calculations**: Validate distributor discount/tiered pricing logic algorithms.
+- **Contract Workflows**: Verify state transitions of agreement signing steps.
+
+### Baseline Testing (Regression Prevention)
+- **Performance & Latency Baseline**:
+  - Record pricing model elasticity bounds.
+  - Establish transaction duration targets.
+- **Behavioral & Data Baseline**:
+  - Freeze draft agreements to detect version drift.
+
+### Integration & Manual Verification
+- **Legal Review**: Complete manual legal reviews with distributor agreement templates.
+- **Approval Check**: Verify that counter agreements trigger correct product allocations.
+
+## Definition of Done (DoD)
+- [ ] **Agreement Approval**: Distributor agreement is signed and approved.
+- [ ] **Unit Tests**: Financial calculation modules verify within bounds.
+- [ ] **Compliance Signoff**: The contract complies with legal standards.

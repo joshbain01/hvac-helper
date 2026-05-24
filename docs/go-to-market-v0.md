@@ -70,7 +70,7 @@ Based on the unit economics modeled in [unit-economics-v0.md](file:///c:/Users/j
     *   *Model*: Co-package the device with mid-tier manifold gauges or temperature clamp kits. We sell bulk devices to the OEM at a 40% discount ($239.40 ASP), and they package it as a premium diagnostic bundle.
 
 ### B. The Hybrid SaaS Model: Hardware + Software Monetization
-Because on-device LLMs and local RAG (Scenario B/D in [unit-economics-v0.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/unit-economics-v0.md)) reduce active operational cloud fees to almost $0.00, we do not need to force individual technicians into a monthly subscription to make a profit. We will run a **Hybrid Model**:
+Because on-device LLMs, local RAG, and cloudless local office storage (Scenario B/D in [unit-economics-v0.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/unit-economics-v0.md)) reduce active operational cloud hosting fees to $0.00, we do not need to force individual technicians into a monthly subscription to make a profit. We will run a **Hybrid Model**:
 
 *   **Free Tier (Included with Hardware)**: 
     *   Individual app license.
@@ -80,6 +80,9 @@ Because on-device LLMs and local RAG (Scenario B/D in [unit-economics-v0.md](fil
 *   **Pro Teams SaaS Subscription ($19/user/month, billed annually)**:
     *   Targeted at **Shop Owners (Donna Jenkins)**.
     *   **Features**:
+        *   **Local Office Sync Integration**: Exposes the shop's local office PC/NAS database to the WAN via secure Cloudflare Tunnels utilizing HMAC-SHA256 request signing.
+        *   **Office Sync Dashboard Console**: Lightweight local web interface hosted on the office server for dispatchers and managers to search past units, audit apprentices, view service tag photo records, and edit site-specific technical notes.
+        *   **Active Job Scope Sync**: Automatically pushes down historical service notes and past equipment parameters for customers/sites on the tech's upcoming 7-day schedule.
         *   ServiceTitan, Housecall Pro, and QuickBooks CRM integrations.
         *   Manager dashboard to audit Apprentice diagnostics.
         *   Fleet-wide snapshot validation (ensures techs are actually capturing before/after sets).

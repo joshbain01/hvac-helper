@@ -11,7 +11,10 @@ HITL
 - [go-to-market-v0.md - Section 4 (Closed Beta Plan)](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/go-to-market-v0.md#L148)
 
 ## Prototype Lessons & Context
+
 Closed beta will run the physical prototypes through the multi-attempt BLE connection cycles and outbox persistence simulated in [state-machine.js](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/logic-state/state-machine.js#L711-L734).
+
+This task corresponds to the existing [Mobile Camera Scanner & OCR Flow](file:///c:/Users/joshu/projects/hvac-helper-tool/prototype/ui-ocr-scanner) prototype.
 
 ## What to build
 Recruit 10 field technicians across 3 HVAC service businesses for the Closed Beta phase. Establish baseline performance logging for traditional methods (capture time, error rates, admin overhead) before deploying the physical tools in Week 2.
@@ -26,3 +29,24 @@ Recruit 10 field technicians across 3 HVAC service businesses for the Closed Bet
 
 ## User stories covered
 N/A (UX & Sales Proof)
+
+## Testing Guidance
+
+### Unit Testing
+- **Applicant Screening**: Test filtering algorithms for candidate selection.
+- **Survey persistence**: Verify SQLite storage of questionnaire feedback.
+
+### Baseline Testing (Regression Prevention)
+- **Performance & Latency Baseline**:
+  - Monitor signup page performance and loading times.
+- **Behavioral & Data Baseline**:
+  - Capture and freeze recruitment screening questionnaires.
+
+### Integration & Manual Verification
+- **Technician Onboarding**: Verify onboarding flows and check support channels.
+- **Kit Tracking**: Confirm that beta kits are mapped to correct candidates.
+
+## Definition of Done (DoD)
+- [ ] **Beta Pool**: 10 qualified technicians are recruited and onboarded.
+- [ ] **Contract Completion**: Non-disclosure agreements and beta terms are signed.
+- [ ] **Kit Distribution**: Hardware tracker logs confirm delivery of all beta units.

@@ -1,12 +1,15 @@
-# Handoff: HVAC Helper Pro (v2)
+# Handoff: HVAC Helper Pro (v2) (Archived)
 
-This document summarizes the current status, design decisions, and unresolved blocker items for **HVAC Helper Pro** following a comprehensive 8-agent parallel review and alignment session.
+> [!NOTE]
+> This handoff document has been archived. It summarized the project status at the transition from v1 to v2. For current requirements, please refer to the active [PRD.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/PRD.md).
+
+This document summarizes the status, design decisions, and unresolved blocker items for **HVAC Helper Pro** following a comprehensive 8-agent parallel review and alignment session.
 
 ---
 
 ## 1. PRD State (Stable vs. Moving)
 
-The core requirements document [prd-hvac-helper-pro-v2.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/prd-hvac-helper-pro-v2.md) has been updated to reflect several major design integrations.
+The core requirements document [PRD.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/PRD.md) has been updated to reflect several major design integrations.
 
 ### Stable Sections (Locked)
 *   **Section 1 & 2 (Problem & Goals)**: Clear baseline assumptions (to be validated in Beta) and time/accuracy targets.
