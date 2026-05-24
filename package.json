@@ -6,6 +6,7 @@
   "scripts": {
     "prototype:logic-state": "node prototype/logic-state/index.js",
     "prototype:logic-ble-ota": "node prototype/logic-ble-ota/index.js",
+    "prototype:logic-rollback": "node prototype/logic-rollback/index.js",
     "prototype:ui-ocr-scanner": "node prototype/ui-ocr-scanner/server.js",
     "compile-tokens": "node scripts/generate-tokens.js"
   },
