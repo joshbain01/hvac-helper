@@ -55,9 +55,9 @@ Refer to [CONTEXT.md](file:///c:/Users/joshu/projects/hvac-helper-tool/CONTEXT.m
 *   **Interface**: 
     *   4 physical tactile buttons to trigger air sensor reads.
     *   2 digital rotary encoders with push-button confirmation for Suction Line (SL) and Liquid Line (LL) pipe clamp temperatures and saturation temperature dial-in.
-    *   1 main top-line LCD (or 1.3" OLED) showing calculations (ΔT, Superheat, Subcooling).
-    *   6 mini-OLED (128x32) screens multiplexed via a TCA9548A I2C multiplexer.
-    *   6 multi-sensory RGB status LEDs (solid green for confirmed, slow pulse amber for transmitting, fast flash red for error).
+    *   1 main top-mounted 128x64 display showing all measurements, saturation dials, calculations, and active target ranges.
+    *   1 physical BEFORE/AFTER slide switch to context-swap display values and progress LEDs.
+    *   6 progress checklist LEDs (solid yellow = needs capture, solid green = captured, flashing yellow = sensor fault).
 *   **Power**: Rechargeable Li-Ion battery with deep-sleep state transition triggered on inactivity, waking instantly via GPIO interrupts (EXT1) from any interface button.
 
 ### 2. Mobile App (iOS / Android)

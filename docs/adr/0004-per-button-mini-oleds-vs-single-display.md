@@ -1,6 +1,6 @@
 # 4. Per-Button Mini-OLEDs vs Single Display
 
-**Status**: Proposed  
+**Status**: Superseded by [ADR-0010](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/adr/0010-single-top-display.md)  
 **Date**: 2026-05-22  
 **Deciders**: Antigravity (AI Assistant), User  
 **Agent Roles**: `@agency-design-ux-researcher` (UX Researcher) + `@agency-engineering-embedded-firmware-engineer` (Embedded Firmware Engineer)  

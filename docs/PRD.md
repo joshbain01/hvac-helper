@@ -30,7 +30,7 @@ HVAC technicians currently need to carry multiple tools (voltmeter, temperature 
 ---
 
 ## 3. Non‑Goals (Scope Exclusions)
-- No full‑featured touchscreen UI – the device is button‑driven with fixed displays.
+- No full‑featured touchscreen UI – the device is button‑driven with a single top display.
 - No built‑in pressure sensors – technicians dial in refrigerant saturation temperatures directly from their physical gauges' printed temperature rings.
 - No real‑time cloud sync; data is stored locally on the phone and uploaded when a network becomes available (offline‑first approach).
 - No advanced diagnostics beyond the calculations listed (ΔT, super‑heat, sub‑cool).
@@ -45,35 +45,35 @@ HVAC technicians currently need to carry multiple tools (voltmeter, temperature 
 
 # **User Stories**
 1. **Record Before Measurements**
-   - *As a technician*, I press the **Return Air** button, see the temperature displayed, and see the LED blink amber while the data is transmitted (≤ 3 s) then turn green after the phone confirms receipt.
-   - *Acceptance*: The reading is stored, displayed on the top screen, and the LED is green within 3 seconds of press.
+   - *As a technician*, I slide the physical BEFORE/AFTER switch to BEFORE, press the **Return Air** button, see the temperature update on the single top display, and see the progress LED turn solid green from yellow (indicating capture) within 3 seconds of receipt confirmation.
+   - *Acceptance*: The reading is stored, displayed on the top display, and the LED turns green within 3 seconds.
 2. **Record Additional Data Points**
-   - *As a technician*, I press the dedicated buttons for **Return Air (RA)**, **Supply Air (SA)**, **Outdoor Ambient (OA)**, and **Discharge Air (DA)**, or push the rotary encoders for **Suction Line (SL)** and **Liquid Line (LL)**, to capture each slot's values on its dedicated screen.
-   - *Acceptance*: Each data point (or group of data points for SL/LL) is pushed to the phone within 3 seconds, LED amber blinks during transmission then turns green.
-3. **Capture Photo of Service Tags**
-   - *As a technician*, I tap the **Photo Capture** soft button in the mobile app to snap a picture of the unit’s service tags; the app parses the image to extract model/serial numbers for lookup in the RAG knowledge base.
-   - *Acceptance*: Parsed information appears in the app; the tech can edit if parsing fails.
+   - *As a technician*, I press the dedicated buttons for **Return Air (RA)**, **Supply Air (SA)**, **Outdoor Ambient (OA)**, and **Discharge Air (DA)**, or push the rotary encoders for **Suction Line (SL)** and **Liquid Line (LL)**, to capture each slot's values on the top display, checking off the progress LEDs as they turn from solid yellow (needs capture) to solid green.
+   - *Acceptance*: Each data point is pushed to the phone within 3 seconds, display updates, and its progress LED turns green.
+3. **Capture Photo of Service Tags & OCR Telemetry**
+   - *As a technician*, I tap the **Photo Capture** soft button in the mobile app to snap a picture of the unit’s service tags; the app parses the image to extract model/serial numbers. If the OCR is incorrect, I manually override it.
+   - *Acceptance*: Parsed information appears in the app. Manual override updates `ocr_status` to `MANUAL_OVERRIDE` and triggers telemetry logs.
 4. **LLM Interaction for Work Description**
    - *As a technician*, I open the chat interface and describe the work performed (using rapid tap-templates, hands-free voice-to-text dictation, or by deferring text entry until I return to the service vehicle). The LLM processes these inputs to suggest a structured, professional service description.
    - *Acceptance*: The tech reviews, edits if needed, and saves the description.
 5. **Consumables Prompt**
    - *As a technician*, after confirming the work description, the LLM prompts me to list consumables used (filters, refrigerant, seals, etc.).
    - *Acceptance*: Selected consumables are added to the snapshot for automatic ordering.
-6. **Dial in Pressure and Capture Temperature**
-   - *As a technician*, I turn the **Liquid‑line** and **Suction‑line** rotary encoders to match my gauge readings, and I push the encoder dials to confirm the manual pressure and trigger the clamp probe temperature capture.
-   - *Acceptance*: Pressure and temperature values are captured, accepted, and used in subsequent calculations.
-7. **Capture After Measurements**
-   - *As a technician*, after repairs I repeat the same button presses and encoder pushes for all data points; the device ensures all LEDs turn green before I leave.
-   - *Acceptance*: All LEDs green, the app shows a “snapshot complete” badge, and data is pushed to the cloud.
+6. **Dial in Saturation Temperature and Capture Temperature**
+   - *As a technician*, I turn the **Liquid‑line** and **Suction‑line** rotary encoders to match my gauge readings' saturation temperature and push the encoder dials to confirm the manual saturation temperature and trigger the clamp probe temperature capture.
+   - *Acceptance*: Saturation and pipe temperature values are captured, accepted, and used in subsequent calculations.
+7. **Capture After Measurements & Performance Deltas**
+   - *As a technician*, I slide the physical switch to AFTER. The top display context-swaps to the After Set (all progress LEDs turn yellow indicating pending capture), and I capture SA, RA, etc. The app calculates Before-to-After performance deltas upon snapshot finalization.
+   - *Acceptance*: All After Set LEDs are green, notes are added, performance deltas are calculated, and the snapshot is finalized.
 8. **Finalize Snapshot & Send to Office**
-   - *As a technician*, once every LED is green I tap the **Send** soft button on the mobile app; the app confirms the full snapshot is uploaded to the cloud and notifies the office.
+   - *As a technician*, once all measurements are taken and notes are written, I tap the **Send** soft button on the mobile app; the app confirms the full snapshot is uploaded to the cloud and notifies the office.
    - *Acceptance*: Cloud receives complete snapshot, tech sees confirmation message.
 
 ---
 
 ## 5. Firmware Requirements
 
-- **Error handling** – BLE transmission retries up to 3 times; on persistent failure LED turns red and a “Retry” flag is logged. *Add persistent logging of failure counts in NVS for post‑mortem analysis.*
+- **Error handling** – BLE transmission retries up to 3 times; if confirmation is not received, the progress LED remains solid yellow (unconfirmed/needs capture), and a retry error is logged. If a hardware sensor/probe fault is detected, the LED flashes yellow. *Add persistent logging of failure counts in NVS for post‑mortem analysis.*
 - **Watchdog & Reset** – Device includes a hardware watchdog (≈5 s). On watchdog reset the cached snapshot is persisted in NVS and restored on next boot. *Include a watchdog hook that also records the reset cause in NVS.*
 - **Memory budget** – Static cache ≤ 200 B; total RAM usage ≤ 30 % of ESP‑32 RAM (≈150 KB). No dynamic allocation after init. *Allocate a static BLE TX buffer (`static uint8_t ble_tx_buf[BLE_MAX_PAYLOAD];`) and avoid any heap usage.*
 - **Stack & Heap Verification** – Add `configCHECK_FOR_STACK_OVERFLOW` hook and periodic `uxTaskGetStackHighWaterMark()` checks. Verify free heap at startup (`heap_caps_get_free_size(MALLOC_CAP_8BIT)`) stays within budget.
@@ -86,8 +86,9 @@ HVAC technicians currently need to carry multiple tools (voltmeter, temperature 
 
 ## 6. Mobile-App Requirements
 - **Platform strategy** – Native iOS (SwiftUI, iOS 15+) and Android (Jetpack Compose, API 24+), with a shared React‑Native layer for non‑UI logic.
-- **Offline‑first storage** – SQLite/Core Data log of all sensor snapshots. Snapshots remain local-only **Drafts** until finalized. Finalization makes the snapshot read-only (**Immutable**) and queues it in the local **Outbox** for upload. Edits to finalized snapshots require creating a new **Revision** (linked via parent ID).
-- **BLE manager** – Queues each packet, retries up to 3 times within the 3 s latency window, and reports final transmission status (green/amber/red) to the UI.
+- **Offline‑first storage** – SQLite/Core Data log of all sensor snapshots. Snapshots remain local-only **Drafts** until finalized. Finalization makes the snapshot read-only (**Immutable**) and queues it in the local **Outbox** for upload. Edits to finalized snapshots require creating a new **Revision** (linked via parent ID). Creating a revision clones all parent snapshot data (measurements and calculations) to allow simple metadata patching.
+- **BLE manager** – Queues each packet, retries up to 3 times within the 3 s latency window, and reports transmission status to the UI (rendering green checkmark or yellow warning/red error icon with proper color-blind text).
+- **OCR Status Telemetry** – Snapshot record includes an `ocr_status` field (`PENDING`, `OCR_SUCCESS`, `MANUAL_OVERRIDE`). If a technician overrides the OCR-captured model/serial numbers manually, `ocr_status` updates to `MANUAL_OVERRIDE` and triggers telemetry logging.
 - **Reactive UI architecture** – MVVM (iOS) / MVI (Android) with Combine / Kotlin Flow; UI renders solely from immutable view‑state objects.
 - **Performance & battery** – BLE handling < 5 ms per event; background upload via App Refresh (iOS) / WorkManager (Android) monitors network connectivity to opportunistically sync finalized Outbox snapshots; idle mode disables unnecessary peripherals.
 - **Security & Compliance** – Data encrypted at rest via Keychain/EncryptedSharedPreferences; HTTPS/TLS 1.3 for cloud. Customer PII is stored separately from raw system measurement Snapshots, linked only via an anonymized UUID to comply with state privacy regulations (e.g., CCPA/CPRA). Snapshots are retained for a minimum of 3 years to comply with EPA Section 608 and state residential contractor laws.
@@ -97,40 +98,41 @@ HVAC technicians currently need to carry multiple tools (voltmeter, temperature 
 - **Firmware OTA integration** – Settings screen includes “Check for Firmware Update” to trigger OTA over BLE with progress UI.
 - **Testing & metrics** – ≥ 80 % unit test coverage, UI tests for each button‑LED flow, CI BLE mock tests; launch metrics include BLE latency ≤ 250 ms, sync success ≥ 98 %, crash‑free ≥ 99.5 %, battery drain < 5 %/h.
 - **Guided vs. Expert UI modes** – Offer a step-by-step "Guided Mode" with sensor placement diagrams for apprentice technicians, and a single-screen rapid capture grid ("Expert Mode") for lead technicians.
-- **Voice-to-Text & Deferred Input** – Provide native speech-to-text dictation and allow technicians to save snapshots with pending work descriptions to complete later in the service vehicle.
+- **Voice-to-Text & Deferred Input** – Provide native speech-to-text dictation and allow technicians to save snapshots with pending work descriptions to complete later in the service vehicle. Notes are mandatory before a snapshot can be finalized.
 
-## 8. Mobile App Design System
+## 7. Mobile App Design System
 
 The mobile application design system, including visual language guidelines, components, interaction design, and token specifications, has been moved to its own dedicated file: [design-system.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/design-system.md).
 
 ---
 
-## 7. Solution Overview
+## 8. Solution Overview
 - **Hardware**: ESP32‑based handheld with:
   - High‑precision temperature/humidity sensor built-in (± 0.2 °F, ± 0.2 %RH) and two ports for external pipe clamp temperature probes.
   - Two digital **rotary encoders** with integrated push buttons (Suction Line, Liquid Line) for manual saturation temperature entry (read directly from gauge scales) and external clamp probe temperature capture.
   - Four tactile **buttons** (Return Air, Supply Air, Outdoor Ambient, Discharge Air).
-  - Dedicated **mini‑OLED** screen (128x32) for each of the six measurement slots, displaying the sensor value and text-based connection status (e.g., "OK", "TX...", "FAIL"), multiplexed via a TCA9548A I2C multiplexer.
-  - **Top‑line LCD** (or 1.3" OLED) showing real‑time calculations (ΔT, super‑heat, sub‑cool).
-  - **LEDs** (green/amber/red) next to each slot/control indicating transmission status, featuring unique flashing profiles (solid green for confirmed, slow pulse amber for transmitting, fast flash red for error) to support color-blind technicians.
+  - **Top Display**: A single high-contrast 128x64 display at the top of the handheld device displaying all raw measurements, saturation dials, calculations (Delta T, Superheat, Subcooling), and active target ranges.
+  - **Progress LEDs**: Six two-color (Yellow/Green) visual indicators next to each button or rotary encoder representing the capture state. It glows solid yellow if a reading is missing (needs capture), solid green when captured successfully, and flashes yellow if there is a sensor/probe fault.
+  - **Physical Switch**: A BEFORE/AFTER slide switch that context-swaps display values between the Before and After sets, and triggers a BLE re-transmission of all cached values in the selected set to sync with the mobile application.
   - **Bluetooth 5.0 LE** for immediate data push and bidirectional configuration sync.
   - **Battery** (Li‑Ion) supporting ≥ 10 h of continuous use, waking from deep sleep via button press or encoder push (EXT1 GPIO interrupt).
 - **Ergonomic Form Factor** – Hand‑held, lightweight (~200 g), rubberized grip, IP‑54 sealed enclosure for dust/moisture resistance.
-- **Simple Interaction Model** – Six tactile buttons each with dedicated mini‑OLED and LED indicator; no menus, just one‑press capture.
+- **Simple Interaction Model** – Six tactile controls with progress LEDs and a single top display showing values; no menus, just one‑press capture.
 - **Power Management** – Deep‑sleep between reads, BLE idle disabled, rechargeable via USB‑C.
 - **Durability** – Shock‑resistant housing, meets MIL‑STD‑810G drop test.
 - **Physical Labels** – Engraved icons for each sensor/button to aid field use under bright light.
-- **Firmware**: Handles sensor reads (built-in and clamp probes), UI updates (sequential writes via I2C multiplexer), Bluetooth packet assembly, local superheat/subcool calculation via simple subtraction (Suction Pipe Temp minus dialed Suction Saturation Temp for Superheat; dialed Liquid Saturation Temp minus Liquid Pipe Temp for Subcool), and LED state machine.
+- **Firmware**: Handles sensor reads (built-in and clamp probes), UI updates (drawing to the Top Display), Bluetooth packet assembly, local calculations (Delta T, Superheat, Subcooling), and LED state machine.
 - **Mobile App (iOS/Android)**:
-  - Receives each data point instantly, stores locally in the active Draft snapshot, performs calculations, and displays green LED confirmation.
-  - Shows a composite “snapshot” view with before/after sections.
-  - Queues completed snapshots in the Outbox for background upload upon explicit finalization.
-  - Sends email / message to office, optionally triggers parts‑order workflow.
+  - Receives each data point instantly, stores locally in the active Draft snapshot, performs calculations, and updates the device screen targets (pushing confirmed targets with a `(Conf)` suffix when equipment tag is scanned).
+  - Shows a composite before/after view with performance deltas.
+  - Mandates technician notes before finalizing a snapshot.
+  - Queues completed snapshots in the Outbox for background upload.
+  - Clones all parent snapshot readings and calculations when creating a new **Revision** to allow easy metadata edits.
 - **Cloud Backend** (MVP): Simple endpoint to accept JSON snapshot, store in database, and forward to existing CRM.
 
 ---
 
-## 6. Technical Considerations
+## 9. Technical Considerations
 **Dependencies**
 - ESP‑IDF / Arduino core for ESP32 (firmware development).
 - Bluetooth LE stack on mobile (React Native / native iOS/Android).
@@ -155,16 +157,16 @@ The mobile application design system, including visual language guidelines, comp
 
 ---
 
-## 7. Open Questions (Resolved)
-- **Pressure measurement** – No built‑in sensor; technicians dial in values (resolved).
+## 10. Open Questions (Resolved)
+- **Pressure measurement** – No built‑in sensor; technicians dial in saturation values directly (resolved).
 - **Timeout** – 20 minutes per before/after capture (resolved).
-- **LED colors** – Green/Amber/Red as defined (resolved).
-- **Screen layout** – No menus; per‑button value display plus top‑line calculations (resolved).
-- **Prototype durability** – “Whatever needed to get it in front of users” – will target rugged enclosure (IP‑54) for beta.
+- **LED colors** – Yellow/Green checklist: Solid Yellow (needs capture), Solid Green (captured), Flashing Yellow (sensor fault) (resolved).
+- **Screen layout** – Single Top Display (128x64) showing all measurements, saturation dials, calculations, and active target ranges (resolved).
+- **Prototype durability** – Will target rugged enclosure (IP‑54) for beta (resolved).
 
 ---
 
-## 8. Launch Plan
+## 11. Launch Plan
 | Phase | Date | Audience | Success Gate |
 |-------|------|----------|--------------|
 | Internal Alpha | June 2026 | Engineering team + 2 pilot techs | All LEDs green in > 90 % of test runs, battery ≥ 10 h. |
@@ -175,7 +177,7 @@ For detailed information on the target segments, pricing structure, distribution
 
 ---
 
-## 9. Appendix
+## 12. Appendix
 - **Glossary** – See `CONTEXT.md`.
 - **Go-To-Market Strategy** – See [go-to-market-v0.md](file:///c:/Users/joshu/projects/hvac-helper-tool/docs/go-to-market-v0.md).
 - **Potential ADRs** – None required at this stage (design decisions are straightforward and reversible). 

@@ -45,24 +45,32 @@ _Avoid_: Snapshot edit, update
 ### Hardware Interface & Feedback
 
 **Button**:
-A physical tactile control on the handheld device (specifically for Return Air, Supply Air, Outdoor Ambient, and Discharge Air) that initiates a sensor read, transmits the data via Bluetooth, and updates the associated LED.
+A physical tactile control on the handheld device (specifically for Return Air, Supply Air, Outdoor Ambient, and Discharge Air) that initiates a sensor read, transmits the data via Bluetooth, and updates the associated progress LED.
 _Avoid_: Key, switch
 
 **Rotary Encoder**:
 An incremental digital input dial with an integrated push-button (specifically for Suction Line and Liquid Line) used to adjust manual saturation temperature (read directly from the physical gauge's refrigerant scale) and initiate a clamp probe temperature read, transmitting both data points via Bluetooth.
 _Avoid_: Reostat, potentiometer
 
-**LED Status**:
-The visual indicator next to a button or rotary encoder representing the transmission state of that data point, featuring unique flashing profiles (solid green for confirmed, slow pulse amber for transmitting, fast flash red for error) to support accessibility.
-_Avoid_: Light indicator, status light
+**Progress LED**:
+The two-color (Yellow/Green) visual indicator next to a button or rotary encoder representing the capture state of that data point. It glows solid yellow if a reading is missing (needs capture), solid green when captured successfully, and flashes yellow if there is a sensor/probe fault.
+_Avoid_: Light indicator, status light, transmission LED
+
+**Top Display**:
+The single high-contrast 128x64 display at the top of the handheld device displaying all raw measurements, saturation dials, calculations, and active target ranges.
+_Avoid_: Mini-OLEDs, individual displays
 
 **Sleep Caching**:
-The temporary local storage of captured measurements on the handheld device, which are persisted through low-power states.
-_Avoid_: Local log
+The local storage of captured measurements in the handheld device's memory, which is context-swapped based on the physical switch position and persisted through low-power sleep states.
+_Avoid_: Local log, flash logs
 
-**I2C Multiplexer**:
-An integrated circuit (TCA9548A) used to route the ESP32's primary I2C bus to multiple independent channels, enabling the use of multiple mini-OLED displays with matching I2C addresses.
-_Avoid_: Display switch
+**Target Ranges**:
+The Superheat and Subcooling reference thresholds displayed on the screen. They default to generic HVAC values in standalone mode and sync to factory tolerances once a tag is scanned.
+_Avoid_: Tolerance limits, range brackets
+
+**Physical Switch**:
+The BEFORE/AFTER toggle/slide switch on the handheld device that context-swaps display values and triggers a re-transmission of all cached measurements for the selected set to the app.
+_Avoid_: Toggle slider, software focus switch
 
 ### Mobile App Features
 
@@ -70,9 +78,21 @@ _Avoid_: Display switch
 The process of photographing equipment service tags with the mobile application to extract text using local on-device OCR (Apple Vision / Android ML Kit), which is then parsed into structured model and serial numbers by the on-device LLM (or backend cloud LLM fallback).
 _Avoid_: Tag scan, image search
 
+**OCR Status**:
+The metadata field (`PENDING`, `OCR_SUCCESS`, `MANUAL_OVERRIDE`) in the snapshot record indicating how the equipment model/serial numbers were captured.
+_Avoid_: OCR state, extraction signal
+
+**Manual Override**:
+The technician's manual entry of equipment details when OCR fails, which updates the OCR Status to `MANUAL_OVERRIDE` and triggers telemetry logging for product improvement.
+_Avoid_: Manual type-in, override code
+
 **LLM Interaction**:
 The on-device (Apple/Android local model) or cloud-fallback feature that converts free-form technician notes or dictation into a structured service description and auto-itemizes consumables. Any cloud fallback execution enforces zero data retention to protect customer privacy.
 _Avoid_: AI chat, note generation
+
+**Performance Deltas**:
+The calculated thermodynamic changes (Delta T, Superheat, Subcooling differences) between the Before Set and After Set included in the final office sync payload to demonstrate repair effectiveness.
+_Avoid_: Improvement metrics, value deltas
 
 ### Domain Terms (Measurement Slots)
 
