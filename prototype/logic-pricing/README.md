@@ -32,7 +32,8 @@ npm run prototype:logic-pricing
 
 ## What To Watch
 
-*   Whether hardware gross margin stays positive after distributor margin.
-*   Whether monthly gross margin covers fixed operating costs.
-*   Whether high LLM fallback cost breaks the low subscription price.
-*   Whether break-even timing is dominated by attach rate or unit volume.
+*   **Q1**: Watch `Months to cover fixed costs` as you cycle `[a/z]` — how much does break-even move per 5pp of attach rate?
+*   **Q2**: Push distributor margin up with `[m]` until the hardware section shows a `⚠ MARGIN THIN` warning — that's your tolerance ceiling.
+*   **Q3**: Raise LLM cost with `[l]` and watch `LLM cost` % of revenue climb — at what percentage does gross/sub go negative?
+*   **Q4**: Compare `Break-even unit count` against `Units sold` — the `✓/⚠` indicator tells you whether you're above or below the floor.
+*   **Q5**: Read the Sensitivity Ranking table on first load — the `1st (worst)` row names the variable with the most leverage over monthly gross. Note that distributor margin scores `+$0/mo` here because it only affects one-time hardware gross, not recurring SaaS margin.

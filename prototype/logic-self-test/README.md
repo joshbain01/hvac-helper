@@ -36,7 +36,15 @@ npm run prototype:logic-self-test
 
 ## What To Watch
 
-*   The mode should remain `NOT_RUN` until POST executes.
-*   A clean run should enter `FULL_SERVICE`.
-*   One or two failures should enter `DEGRADED_STANDALONE`.
-*   Three or more failures should enter `SERVICE_LOCKOUT`.
+*   **Q1**: On a clean run (no faults), press `[p]` — mode shows `FULL_SERVICE`. The `Criticality` column labels which checks are `CRITICAL` (all 6 must pass) vs `DEGRADABLE`. The answer is: all CRITICAL checks must pass, and there are no DEGRADABLE-only paths to full-service.
+
+*   **Q2**: Press `[4]` (BLE fault), then `[p]` — one DEGRADABLE failure → `DEGRADED_STANDALONE`. Press `[5]` (probe fault), then `[p]` again — two failures still `DEGRADED_STANDALONE`. This is the tolerance ceiling: 1–2 non-critical failures are survivable.
+
+*   **Q3**: Three separate tests for the lockout combinations:
+    *   Press `[1]` (display) then `[p]` — mode should be `SERVICE_LOCKOUT` even though only one component failed (display alone forces lockout — technician has no output).
+    *   Reset (`[r]`), press `[2]` (buttons) + `[3]` (encoders) then `[p]` — `SERVICE_LOCKOUT` because both input mechanisms are lost simultaneously.
+    *   Reset, press `[4]` + `[5]` + `[6]` (BLE + probes + battery) then `[p]` — three DEGRADABLE failures → count-based `SERVICE_LOCKOUT`.
+
+*   **Q4**: Before pressing `[p]`, inject a fault with `[1]` or `[5]`. The `Projected mode if POST ran now` line shows the likely outcome while the check list already highlights the `⚡ FAULT` column. Check whether a technician in the field could read the output and identify which component to service.
+
+*   **Q5**: Inject a mix of faults and read the `Projected mode` line before running POST — it names the reason (`buttons + encoders both failed`, `display failed`, etc.). If the reason text is clear enough to drive a field decision without running the code, the mode logic is well-formed for firmware implementation.
