@@ -94,6 +94,12 @@ stateDiagram-v2
     *   Capture the **After Set** measurements within 20 minutes of your final button press.
 *   **Timeout**: If you do not confirm a captured data point in the app within 20 minutes, that individual measurement expires and you must recapture it.
 *   **Revision**: To correct a finalized snapshot, you copy the snapshot, increment the revision number, link it to the parent ID, and upload it as a new audit record.
+*   **EPA Section 608 Compliance Fields**: To satisfy federal EPA audit requirements for refrigerant recovery and leak tracking, the Snapshot captures:
+    *   `technician_epa_license_number` (certified operator link)
+    *   `refrigerant_added_lbs` and `refrigerant_recovered_lbs` (material movement log)
+    *   `recovery_cylinder_id` (disposal traceability)
+    *   `leak_inspection_performed` and `leak_verification_method` (leak service tracking)
+    *   `initial_verification_status` and `followup_verification_status` (verification test status logs)
 
 ---
 
