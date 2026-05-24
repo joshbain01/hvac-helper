@@ -77,12 +77,6 @@ To clarify design patterns, hardware diagnostics, and APIs, the following protot
 *   **Question to Answer**: How do varying subscriber attach rates, LLM fallback API costs, and distributor margins affect break-even Economics?
 *   **Description**: Command-line sensitivity calculator that computes operating margins and break-even windows based on variable user/unit economic parameters.
 
-### 8. [PLANNED] Homeowner PDF Service Report Layouts (UI Prototype)
-*   **Target Directory**: `prototype/ui-service-reports`
-*   **Run Command**: `npm run prototype:ui-service-reports`
-*   **Question to Answer**: What layout maximizes the "wow" factor for homeowners while clearly displaying HVAC system health and repair outcomes?
-*   **Description**: Web generator producing three visual PDF themes: a color-coded graphic infographic, a detailed technical/compliance ledger, and an itemized work completed card.
-
 ### 9. [PLANNED] Compact Binary BLE Serialization Protocol (Logic Prototype)
 *   **Target Directory**: `prototype/logic-ble-binary`
 *   **Run Command**: `npm run prototype:logic-ble-binary`
