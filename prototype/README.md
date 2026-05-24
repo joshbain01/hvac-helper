@@ -26,17 +26,20 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:ui-ocr-scanner
     ```
 
+### 3. [BLE OTA Update Coordinator](logic-ble-ota)
+*   **Directory**: [`prototype/logic-ble-ota`](logic-ble-ota)
+*   **Question Answered**: How do we coordinate chunk packetization, sliding-window retries, CRC checks, and firmware transmission flow control without locking up the mobile app UI or overflowing the ESP32's buffer?
+*   **Type**: Interactive TUI (Terminal User Interface)
+*   **Run Command**:
+    ```bash
+    npm run prototype:logic-ble-ota
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
 
 To clarify design patterns, hardware diagnostics, and APIs, the following prototypes are planned to be implemented sequentially:
-
-### 2. [PLANNED] BLE OTA Update Coordinator (Logic Prototype)
-*   **Target Directory**: `prototype/logic-ble-ota`
-*   **Run Command**: `npm run prototype:logic-ble-ota`
-*   **Question to Answer**: How do we coordinate chunk packetization, sliding-window retries, CRC checks, and firmware transmission flow control without locking up the mobile app UI or overflowing the ESP32’s buffer?
-*   **Description**: Interactive terminal simulating a binary update file divided into MTU-sized chunks, with controls to inject packet drops, CRC mismatches, and connection drops.
 
 ### 3. [PLANNED] LLM Work Note & Consumables Checklist (UI Prototype)
 *   **Target Directory**: `prototype/ui-llm-notes`
