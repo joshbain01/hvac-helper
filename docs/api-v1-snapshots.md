@@ -187,6 +187,32 @@ components:
         refrigerant:
           type: string
           example: "R-410A"
+        technician_epa_license_number:
+          type: string
+          example: "EPA-608-998811"
+        refrigerant_added_lbs:
+          type: number
+          example: 2.5
+        refrigerant_recovered_lbs:
+          type: number
+          example: 0.0
+        recovery_cylinder_id:
+          type: string
+          example: "CYL-883712"
+        leak_inspection_performed:
+          type: boolean
+          example: true
+        leak_verification_method:
+          type: string
+          example: "electronic"
+        initial_verification_status:
+          type: string
+          enum: [PASSED, FAILED, NOT_APPLICABLE]
+          example: "PASSED"
+        followup_verification_status:
+          type: string
+          enum: [PASSED, FAILED, NOT_APPLICABLE]
+          example: "NOT_APPLICABLE"
         created_at:
           type: string
           format: date-time

@@ -104,6 +104,42 @@ The Snapshot is captured by the handheld troubleshooting device, synchronized to
       "type": "string",
       "description": "Refrigerant type. Extensible string (e.g., 'R-410A', 'R-22')."
     },
+    "technician_epa_license_number": {
+      "type": "string",
+      "description": "EPA Section 608 universal or specific certification license number."
+    },
+    "refrigerant_added_lbs": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Quantity of refrigerant added to the system in pounds."
+    },
+    "refrigerant_recovered_lbs": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Quantity of refrigerant recovered from the system in pounds."
+    },
+    "recovery_cylinder_id": {
+      "type": "string",
+      "description": "DOT recovery cylinder serial number or ID."
+    },
+    "leak_inspection_performed": {
+      "type": "boolean",
+      "description": "Indicates if a leak inspection was conducted on the system."
+    },
+    "leak_verification_method": {
+      "type": "string",
+      "description": "Method used for leak verification (e.g., electronic, bubble, pressure test)."
+    },
+    "initial_verification_status": {
+      "type": "string",
+      "enum": ["PASSED", "FAILED", "NOT_APPLICABLE"],
+      "description": "Status of the initial leak verification test."
+    },
+    "followup_verification_status": {
+      "type": "string",
+      "enum": ["PASSED", "FAILED", "NOT_APPLICABLE"],
+      "description": "Status of the follow-up leak verification test."
+    },
     "created_at": {
       "type": "string",
       "format": "date-time",
