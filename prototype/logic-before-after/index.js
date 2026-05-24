@@ -1,175 +1,111 @@
-const SLOT_ORDER = ['RA', 'SA', 'OA', 'DA', 'SL', 'LL'];
+// PROTOTYPE — TUI shell (throwaway, do not ship)
+// Run: npm run prototype:logic-before-after
+import { initialState, reduce, SLOTS, SLOT_LABELS } from './logic.js';
 
-const SLOT_LABELS = {
-  RA: 'Return Air',
-  SA: 'Supply Air',
-  OA: 'Outdoor Ambient',
-  DA: 'Discharge Air',
-  SL: 'Suction Line',
-  LL: 'Liquid Line'
+const C = {
+  reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m',
+  green: '\x1b[32m', yellow: '\x1b[33m', red: '\x1b[31m',
 };
+const B = s => `${C.bold}${s}${C.reset}`;
+const D = s => `${C.dim}${s}${C.reset}`;
+const G = s => `${C.green}${s}${C.reset}`;
+const Y = s => `${C.yellow}${s}${C.reset}`;
+const R = s => `${C.red}${s}${C.reset}`;
 
-const state = {
-  active: 'before',
-  bleConnected: true,
-  faultedSlot: null,
-  notificationSeq: 0,
-  cache: emptyCache(),
-  appDraft: { before: emptySet(), after: emptySet(), lastNotificationSeq: 0 },
-  nvsLogs: ['Boot: restored BEFORE/AFTER cache pointers from NVS.'],
-  eventLog: ['BEFORE cache active. Display and progress LEDs point to BEFORE set.']
-};
+let state = initialState();
 
-function emptySet() {
-  return Object.fromEntries(SLOT_ORDER.map((slot) => [slot, null]));
+function fmtVal(slot, val) {
+  if (!val) return '---';
+  if (slot === 'RA') return `${val.temp}F/${val.rh}%`;
+  if (slot === 'SL' || slot === 'LL') return `${val.pipe}F sat${val.sat}F`;
+  return `${val.temp}F`;
 }
 
-function emptyCache() {
-  return {
-    before: emptySet(),
-    after: emptySet()
-  };
+function slotLed(s, side, slot) {
+  if (s.faultedSlot === slot) return Y('⚡');
+  return s.cache[side][slot] ? G('●') : D('○');
 }
 
-function log(message) {
-  state.eventLog.unshift(message);
-  state.eventLog = state.eventLog.slice(0, 10);
-}
-
-function nvs(message) {
-  state.nvsLogs.unshift(message);
-  state.nvsLogs = state.nvsLogs.slice(0, 6);
-}
-
-function activeSet() {
-  return state.cache[state.active];
-}
-
-function displayValue(slot) {
-  const value = activeSet()[slot];
-  if (value === null) return '---';
-  if (slot === 'RA') return `${value.temp}F/${value.rh}%`;
-  if (slot === 'SL' || slot === 'LL') return `${value.pipe}F sat ${value.sat}F`;
-  return `${value.temp}F`;
-}
-
-function ledStatus(slot) {
-  if (state.faultedSlot === slot) return 'FLASH_YELLOW';
-  return activeSet()[slot] ? 'GREEN_SOLID' : 'YELLOW_SOLID';
-}
-
-function retransmit(reason) {
-  if (!state.bleConnected) {
-    log(`BLE offline: ${state.active.toUpperCase()} cache retained locally; app mirror not updated.`);
-    nvs(`BLE_MISS ${state.active.toUpperCase()} ${reason}`);
-    return;
-  }
-
-  state.notificationSeq += 1;
-  state.appDraft[state.active] = JSON.parse(JSON.stringify(activeSet()));
-  state.appDraft.lastNotificationSeq = state.notificationSeq;
-  log(`BLE notification ${state.notificationSeq}: retransmitted ${state.active.toUpperCase()} cache after ${reason}.`);
-}
-
-function capture(slot) {
-  if (state.faultedSlot === slot) {
-    log(`${SLOT_LABELS[slot]} capture blocked: simulated sensor fault.`);
-    nvs(`SENSOR_FAULT ${slot}`);
-    return;
-  }
-
-  const base = 50 + Math.random() * 55;
-  activeSet()[slot] = slot === 'RA'
-    ? { temp: Number(base.toFixed(1)), rh: Math.round(42 + Math.random() * 18), seq: state.notificationSeq + 1 }
-    : slot === 'SL' || slot === 'LL'
-      ? { pipe: Number(base.toFixed(1)), sat: slot === 'SL' ? 40 : 105, seq: state.notificationSeq + 1 }
-      : { temp: Number(base.toFixed(1)), seq: state.notificationSeq + 1 };
-
-  log(`Captured ${SLOT_LABELS[slot]} into ${state.active.toUpperCase()} device cache.`);
-  retransmit(`${slot} capture`);
-}
-
-function switchContext() {
-  state.active = state.active === 'before' ? 'after' : 'before';
-  log(`Physical switch moved to ${state.active.toUpperCase()}; display pointer swapped immediately.`);
-  retransmit('physical switch movement');
-}
-
-function replayActiveSet() {
-  log(`Manual recovery replay requested for ${state.active.toUpperCase()} cache.`);
-  retransmit('manual replay');
-}
-
-function toggleFault() {
-  const currentIndex = state.faultedSlot ? SLOT_ORDER.indexOf(state.faultedSlot) : -1;
-  state.faultedSlot = currentIndex === SLOT_ORDER.length - 1 ? null : SLOT_ORDER[currentIndex + 1];
-  log(state.faultedSlot ? `Fault injected on ${SLOT_LABELS[state.faultedSlot]}; LED should flash yellow.` : 'All simulated sensor faults cleared.');
-}
-
-function reset() {
-  state.active = 'before';
-  state.bleConnected = true;
-  state.faultedSlot = null;
-  state.notificationSeq = 0;
-  state.cache = emptyCache();
-  state.appDraft = { before: emptySet(), after: emptySet(), lastNotificationSeq: 0 };
-  state.nvsLogs = ['Reset: cache pointers and BLE sequence cleared.'];
-  state.eventLog = ['Simulator reset. BEFORE cache active.'];
-}
-
-function renderTable(title, set) {
-  console.log(title);
-  for (const slot of SLOT_ORDER) {
-    const value = set[slot];
-    const rendered = value ? JSON.stringify(value) : 'missing';
-    console.log(`  ${slot.padEnd(2)} ${SLOT_LABELS[slot].padEnd(17)} ${rendered}`);
-  }
+function mirrorLed(s, side, slot) {
+  return s.appMirror[side][slot] ? G('●') : D('○');
 }
 
 function render() {
-  console.clear();
-  console.log('HVAC Helper Pro - BEFORE/AFTER Switch Context-Swap Prototype (V1)');
-  console.log('Question: can the handheld swap display caches and recover mobile sync without confusing the technician?\n');
-  console.log(`Active switch: ${state.active.toUpperCase()} | BLE: ${state.bleConnected ? 'CONNECTED' : 'DISCONNECTED'} | Last app notification: ${state.appDraft.lastNotificationSeq}`);
-  console.log('\nTop display pointer:');
-  console.log(`  RA ${displayValue('RA').padEnd(12)} SA ${displayValue('SA').padEnd(8)} OA ${displayValue('OA').padEnd(8)} DA ${displayValue('DA').padEnd(8)}`);
-  console.log(`  SL ${displayValue('SL').padEnd(18)} LL ${displayValue('LL').padEnd(18)}`);
-  console.log('\nProgress LEDs for active set:');
-  console.log(SLOT_ORDER.map((slot) => `${slot}:${ledStatus(slot)}`).join('  '));
-  console.log('\nDevice cache:');
-  renderTable('  BEFORE', state.cache.before);
-  renderTable('  AFTER', state.cache.after);
-  console.log('\nMobile app mirror:');
-  renderTable('  BEFORE', state.appDraft.before);
-  renderTable('  AFTER', state.appDraft.after);
-  console.log('\nNVS / recovery log:');
-  state.nvsLogs.forEach((line) => console.log(`  - ${line}`));
-  console.log('\nRecent events:');
-  state.eventLog.forEach((line) => console.log(`  - ${line}`));
-  console.log('\nControls: [tab] switch BEFORE/AFTER  [1] RA  [2] SA  [3] OA  [4] DA  [5] SL  [6] LL');
-  console.log('          [b] BLE connect/disconnect  [r] replay active cache  [f] cycle fault  [c] reset  [q] quit');
+  const s = state;
+  const syncStale = s.appMirror.seq < s.notificationSeq;
+  const bleStr = s.bleConnected ? G('CONNECTED') : R('DISCONNECTED');
+  const syncStr = syncStale
+    ? R(`${s.appMirror.seq}/${s.notificationSeq} STALE`)
+    : G(`${s.appMirror.seq}/${s.notificationSeq} IN SYNC`);
+  const faultStr = s.faultedSlot ? `   ${Y('⚡ fault: ' + s.faultedSlot)}` : '';
+
+  const lines = [
+    B('BEFORE/AFTER Switch Prototype') + '  ' + D('THROWAWAY'),
+    D('Q: does the handheld swap display caches and recover BLE sync without confusing the technician?'),
+    '',
+    `${B('Switch:')} ${B(s.active.toUpperCase())}   ${B('BLE:')} ${bleStr}   ${B('App sync:')} ${syncStr}${faultStr}`,
+    '',
+    B('Active display') + D(`  (${s.active.toUpperCase()} cache)`),
+  ];
+
+  for (const slot of SLOTS) {
+    const val = s.cache[s.active][slot];
+    const raw = fmtVal(slot, val);
+    const icon = s.faultedSlot === slot ? Y('⚡') : val ? G('●') : D('○');
+    const label = D(SLOT_LABELS[slot].padEnd(17));
+    const value = val ? raw : D(raw);
+    lines.push(`  ${icon} ${B(slot)}  ${label} ${value}`);
+  }
+
+  lines.push('', B('Cache comparison'), D('  Slot  Before              After'));
+
+  for (const slot of SLOTS) {
+    const bVal = s.cache.before[slot];
+    const aVal = s.cache.after[slot];
+    const bRaw = fmtVal(slot, bVal);
+    const aRaw = fmtVal(slot, aVal);
+    const pad = ' '.repeat(Math.max(0, 20 - bRaw.length));
+    const bRendered = bVal ? bRaw : D(bRaw);
+    const aRendered = aVal ? aRaw : D(aRaw);
+    lines.push(`  ${B(slot)}    ${bRendered}${pad}${aRendered}`);
+  }
+
+  lines.push('', B('Mobile app mirror'));
+  for (const side of ['before', 'after']) {
+    const leds = SLOTS.map(sl => `${D(sl)} ${mirrorLed(s, side, sl)}`).join('  ');
+    lines.push(`  ${side.toUpperCase().padEnd(7)} ${leds}`);
+  }
+
+  lines.push('', B('Events'));
+  s.eventLog.slice(0, 5).forEach(line => lines.push(`  ${D('>')} ${line}`));
+
+  lines.push(
+    '',
+    D('[tab] switch  [1] RA  [2] SA  [3] OA  [4] DA  [5] SL  [6] LL  [b] BLE  [r] replay  [f] fault  [c] reset  [q] quit'),
+  );
+
+  process.stdout.write('\x1Bc');
+  console.log(lines.join('\n'));
 }
 
 if (process.stdin.isTTY) process.stdin.setRawMode(true);
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
-process.stdin.on('data', (data) => {
+
+process.stdin.on('data', data => {
   const key = data.toLowerCase();
-  if (key === 'q' || key === '\u0003') process.exit(0);
-  if (data === '\t') switchContext();
-  if (key === '1') capture('RA');
-  if (key === '2') capture('SA');
-  if (key === '3') capture('OA');
-  if (key === '4') capture('DA');
-  if (key === '5') capture('SL');
-  if (key === '6') capture('LL');
-  if (key === 'b') {
-    state.bleConnected = !state.bleConnected;
-    log(`BLE ${state.bleConnected ? 'reconnected' : 'disconnected'}.`);
-  }
-  if (key === 'r') replayActiveSet();
-  if (key === 'f') toggleFault();
-  if (key === 'c') reset();
+  if (key === 'q' || key === '') process.exit(0);
+  if (data === '\t')   state = reduce(state, { type: 'SWITCH' });
+  else if (key === '1') state = reduce(state, { type: 'CAPTURE', slot: 'RA' });
+  else if (key === '2') state = reduce(state, { type: 'CAPTURE', slot: 'SA' });
+  else if (key === '3') state = reduce(state, { type: 'CAPTURE', slot: 'OA' });
+  else if (key === '4') state = reduce(state, { type: 'CAPTURE', slot: 'DA' });
+  else if (key === '5') state = reduce(state, { type: 'CAPTURE', slot: 'SL' });
+  else if (key === '6') state = reduce(state, { type: 'CAPTURE', slot: 'LL' });
+  else if (key === 'b') state = reduce(state, { type: 'TOGGLE_BLE' });
+  else if (key === 'r') state = reduce(state, { type: 'REPLAY' });
+  else if (key === 'f') state = reduce(state, { type: 'CYCLE_FAULT' });
+  else if (key === 'c') state = reduce(state, { type: 'RESET' });
   render();
 });
 

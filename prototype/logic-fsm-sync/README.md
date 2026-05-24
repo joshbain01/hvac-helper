@@ -22,18 +22,20 @@ npm run prototype:logic-fsm-sync
 
 ## Simulator Keyboard Shortcuts
 
-*   `[p]` **Switch Provider**: Toggles between ServiceTitan and Housecall Pro payload shapes.
-*   `[t]` **Toggle Token Expiry**: Forces sends into the local retry queue.
-*   `[l]` **Toggle Field Limit**: Switches between constrained and expanded custom-field capacity.
-*   `[s]` **Send Payload**: Sends immediately or queues if the token is expired.
-*   `[r]` **Retry Queue**: Clears token expiry and drains queued payloads.
+*   `[p]` **Switch Provider**: Toggles between ServiceTitan (camelCase, `customFields` object, `invoiceItems`) and Housecall Pro (snake_case, `tech_notes`, `line_items`) payload shapes.
+*   `[t]` **Toggle Token Expiry**: Forces sends into the local outbox queue.
+*   `[l]` **Cycle Field Limit**: Steps through 1–5 custom-field slots one at a time.
+*   `[o]` **Toggle Overflow Mode**: Switches between `privateNote` (overflow fields go into `noteBody`) and `block` (send refuses if any fields overflow).
+*   `[s]` **Send Payload**: Sends immediately, queues if token is expired, or blocks if overflow mode is `block` and fields overflow.
+*   `[r]` **Retry Queue**: Drains the next queued payload and logs whether its idempotency key matches a freshly-built payload (proving or disproving stability).
 *   `[q]` **Quit**: Exits the simulator.
 
 ---
 
 ## What To Watch
 
-*   The `idempotencyKey` should remain stable across retries.
-*   Custom-field overflow should be visible in `privateNote`.
-*   Switching providers should not change the source snapshot.
-*   Token expiry should queue the mapped payload rather than dropping it.
+*   **Q1**: Switch provider with `[p]` — confirm the schema structure (key names, nesting, `invoiceItems` vs `line_items`) changes, while the source snapshot stays the same.
+*   **Q2**: Cycle field limit with `[l]` — watch the Field Routing section show which fields are accepted vs overflow.
+*   **Q3**: Toggle overflow mode with `[o]` — compare `privateNote` (overflow lands in `noteBody`) vs `block` (send is refused). Decide which behaviour is right for the product.
+*   **Q4**: Expire the token with `[t]`, send with `[s]`, then check the Outbox section — the queued payload's idempotency key should be visible and stable.
+*   **Q5**: With a payload in the outbox, refresh the token with `[t]` and retry with `[r]` — the log will show `✓ STABLE` if the key matches a fresh build, or `✗ MISMATCH` if not. Also try changing the provider between queue and retry to surface schema-drift risk.

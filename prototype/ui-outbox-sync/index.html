@@ -5,32 +5,364 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HVAC Helper Pro - Outbox Sync</title>
   <style>
-    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#eef3f7;color:#17212b}header{background:#12344f;color:white;padding:18px 22px}h1{margin:0;font-size:21px}p{line-height:1.45}.wrap{display:grid;grid-template-columns:290px 1fr;gap:16px;padding:18px}.panel,.surface{background:white;border:1px solid #c8d3dd;border-radius:8px;padding:16px}.controls{display:grid;gap:10px}.controls button{min-height:44px;border:1px solid #8da3b7;background:#f8fbfd;border-radius:6px;font-weight:700}.controls button.active{outline:3px solid #f1b84b}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f6f9fc;border:1px solid #d8e1e9;border-radius:6px;padding:12px}.metric strong{font-size:24px;display:block}.list{display:grid;gap:10px;margin-top:14px}.row{display:grid;grid-template-columns:110px 1fr 120px;gap:10px;align-items:center;border:1px solid #d8e1e9;border-radius:6px;padding:12px}.badge{font-weight:800;padding:8px;border-radius:6px;text-align:center}.draft{background:#fff7df;color:#735400}.queued{background:#eaf1ff;color:#1c4f8f}.syncing{background:#e7f6ee;color:#197348}.error{background:#fde8e5;color:#b42318}.compact .row{grid-template-columns:80px 1fr;font-size:13px}.logs{font-family:Consolas,monospace;background:#102a43;color:white;border-radius:6px;padding:12px;min-height:260px}.state{font-size:12px;white-space:pre-wrap;background:#f6f9fc;border:1px solid #d8e1e9;border-radius:6px;padding:10px}.footerbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:#102a43;padding:8px;border-radius:8px}.footerbar button{color:white;background:#284b66;border:1px solid #496a84;border-radius:6px;min-height:38px}@media(max-width:820px){.wrap,.summary,.row{grid-template-columns:1fr}.footerbar{position:static;transform:none;margin:0 18px 18px}}
+    :root { color-scheme:light; --ink:#17212b; --muted:#596775; --line:#c8d1da; --panel:#f7f9fb; --blue:#1d5f9f; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;color:var(--ink);background:#eef3f7}
+    header{padding:18px 22px;background:#12344f;color:white;display:flex;justify-content:space-between;align-items:center;gap:16px}
+    header h1{font-size:21px;margin:0}
+    header p{margin:4px 0 0;color:#d4e6f5;font-size:13px}
+    .wrap{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:18px}
+    .panel{background:white;border:1px solid var(--line);border-radius:8px;padding:16px}
+    .surface{background:white;border:1px solid var(--line);border-radius:8px;padding:16px;min-height:400px}
+    .controls{display:grid;gap:8px}
+    button{min-height:44px;border:1px solid #8da3b7;background:#f8fbfd;border-radius:6px;font-weight:700;cursor:pointer}
+    button.active{outline:3px solid #f1b84b}
+    button.primary{background:var(--blue);color:white;border-color:var(--blue)}
+    button.on{background:#197348;color:white;border-color:#197348}
+    .section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px}
+
+    /* Q1 glance test */
+    .glance-banner{background:#102a43;color:white;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+    .glance-banner strong{font-size:16px}
+    .glance-times{font-size:12px;color:var(--muted)}
+
+    /* Summary row */
+    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+    .metric{padding:10px;border-radius:6px;text-align:center}
+    .metric span{font-size:11px;font-weight:700;display:block}
+    .metric strong{font-size:22px;display:block}
+    .metric.draft{background:#fff7df;color:#735400}
+    .metric.queued{background:#eaf1ff;color:#1c4f8f}
+    .metric.syncing{background:#e7f6ee;color:#197348}
+    .metric.error{background:#fde8e5;color:#b42318}
+    .metric.synced{background:#d8f5e4;color:#197348}
+
+    /* Job rows */
+    .list{display:grid;gap:8px}
+    .row{border:1px solid var(--line);border-radius:6px;padding:12px;cursor:pointer;transition:box-shadow .1s}
+    .row:hover{box-shadow:0 0 0 2px #1d5f9f44}
+    .row.confirmed{opacity:.5;border-style:dashed}
+    .row-header{display:grid;grid-template-columns:115px 1fr auto;gap:10px;align-items:center}
+    .row-drawer{font-size:13px;background:var(--panel);border-radius:4px;padding:10px;margin-top:8px;display:grid;gap:4px}
+    .row-drawer div{display:flex;gap:6px}
+    .row-drawer dt{color:var(--muted);font-weight:700;min-width:80px}
+    .drawer-toggle{border:none;background:none;min-height:unset;padding:2px 8px;font-size:12px;color:var(--blue);cursor:pointer;font-weight:700;text-align:left}
+
+    /* Soft badges (Bars view) */
+    .badge{font-weight:800;padding:8px 12px;border-radius:6px;text-align:center;white-space:nowrap;font-size:14px}
+    .badge.draft{background:#fff7df;color:#735400}
+    .badge.queued{background:#eaf1ff;color:#1c4f8f}
+    .badge.syncing{background:#e7f6ee;color:#197348}
+    .badge.error{background:#fde8e5;color:#b42318}
+    .badge.synced{background:#d8f5e4;color:#0d5c38}
+
+    /* Q2 High-contrast overrides — inverted fills for outdoor glare */
+    .hc .badge.draft{background:#735400;color:#fff7df}
+    .hc .badge.queued{background:#1c4f8f;color:white}
+    .hc .badge.syncing{background:#197348;color:white}
+    .hc .badge.error{background:#b42318;color:white}
+    .hc .badge.synced{background:#0d5c38;color:white}
+    .hc .row{border-width:2px}
+    .hc .metric.draft{background:#735400;color:#fff7df}
+    .hc .metric.queued{background:#1c4f8f;color:white}
+    .hc .metric.syncing{background:#197348;color:white}
+    .hc .metric.error{background:#b42318;color:white}
+
+    /* Q2 glare simulation */
+    .glare-wrap{filter:brightness(1.45) contrast(0.72) saturate(0.55)}
+    .glare-label{background:#f59e0b;color:#7c2d12;font-weight:700;font-size:13px;padding:6px 12px;border-radius:4px;text-align:center;margin-bottom:10px}
+
+    /* Q5 fleet table */
+    .fleet-table{width:100%;border-collapse:collapse;font-size:14px}
+    .fleet-table th{text-align:left;padding:8px 10px;background:#f0f4f8;border-bottom:2px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .fleet-table td{padding:8px 10px;border-bottom:1px solid var(--line)}
+    .fleet-table tr:last-child td{border-bottom:none}
+    .tech-chip{font-size:11px;background:var(--panel);border:1px solid var(--line);padding:2px 6px;border-radius:4px;font-weight:700}
+
+    .state-pre{font-size:11px;white-space:pre-wrap;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;max-height:200px;overflow:auto}
+    .footerbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:#102a43;padding:8px;border-radius:8px;box-shadow:0 8px 24px #0003}
+    .footerbar button{color:white;background:#284b66;border:1px solid #496a84}
+    @media(max-width:820px){.wrap{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}.row-header{grid-template-columns:90px 1fr auto}}
   </style>
 </head>
 <body>
-  <header><h1>SQLite Outbox Sync Status Prototype</h1><p>Question: how should the app show drafts, queued finalized jobs, uploads, and sync errors under harsh glare?</p></header>
+  <header>
+    <div>
+      <h1>SQLite Outbox Sync Status Prototype</h1>
+      <p>Questions: fastest layout? outdoor readability? retry drawer? disappear vs keep? fleet vs tech?</p>
+    </div>
+    <div id="header-timer" style="font-size:15px;font-weight:700;color:#a3e0bf"></div>
+  </header>
+
   <main class="wrap">
     <aside class="panel controls">
+      <div class="section-label">View (Q1, Q2, Q5)</div>
       <button data-view="bars" class="active">Status Bars</button>
       <button data-view="badges">High-Contrast Badges</button>
       <button data-view="logs">Fleet Log Table</button>
+
+      <div class="section-label">Simulation</div>
       <button id="tick">Advance Sync</button>
       <button id="fail">Inject Error</button>
       <button id="reset">Reset</button>
-      <pre class="state" id="state"></pre>
+
+      <div class="section-label">Q1 — Glance Speed Test</div>
+      <button id="glance-start" class="primary">Start Glance Test</button>
+      <div class="glance-times" id="glance-results">Bars: — &nbsp; Badges: — &nbsp; Fleet: —</div>
+
+      <div class="section-label">Q2 — Outdoor Glare Sim</div>
+      <button id="toggle-glare">☀ Simulate Glare: OFF</button>
+
+      <div class="section-label">Q4 — After Sync Behavior</div>
+      <button id="toggle-keep">Keep Confirmed: OFF</button>
+
+      <div class="section-label">State</div>
+      <pre class="state-pre" id="state"></pre>
     </aside>
-    <section class="surface" id="surface"></section>
+
+    <section id="surface" class="surface"></section>
   </main>
-  <nav class="footerbar"><button data-view="bars">Bars</button><button data-view="badges">Badges</button><button data-view="logs">Logs</button></nav>
+
+  <nav class="footerbar">
+    <button data-view="bars">Bars</button>
+    <button data-view="badges">Badges</button>
+    <button data-view="logs">Fleet</button>
+  </nav>
+
   <script>
-    const base=[['DRAFT','JOB-991A','Missing service notes'],['QUEUED','JOB-992B','Ready for upload'],['SYNCING','JOB-993C','Uploading photos'],['ERROR','JOB-994D','HTTP 503 retry in 2m']];
-    const state={view:'bars',jobs:base.map(([status,id,detail],i)=>({status,id,detail,tries:i===3?3:0}))};
-    const cls=s=>s.toLowerCase();
-    function counts(){return state.jobs.reduce((a,j)=>(a[j.status]=(a[j.status]||0)+1,a),{})}
-    function rows(compact=false){return `<div class="list ${compact?'compact':''}">`+state.jobs.map(j=>`<div class="row"><span class="badge ${cls(j.status)}">${j.status}</span><strong>${j.id}</strong>${compact?'':`<span>${j.detail}</span>`}</div>`).join('')+`</div>`}
-    function render(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));document.getElementById('state').textContent=JSON.stringify(state,null,2);const c=counts();let html=`<div class="summary">${['DRAFT','QUEUED','SYNCING','ERROR'].map(k=>`<div class="metric"><span>${k}</span><strong>${c[k]||0}</strong></div>`).join('')}</div>`; if(state.view==='bars') html+=rows(false); if(state.view==='badges') html+=rows(true); if(state.view==='logs') html+=`<pre class="logs">${state.jobs.map(j=>`${new Date().toISOString()} ${j.id} ${j.status.padEnd(7)} tries=${j.tries} ${j.detail}`).join('\n')}</pre>`;document.getElementById('surface').innerHTML=html}
-    document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render()});document.getElementById('tick').onclick=()=>{state.jobs=state.jobs.map(j=>j.status==='QUEUED'?{...j,status:'SYNCING',detail:'Uploading snapshot'}:j.status==='SYNCING'?{...j,status:'SYNCED',detail:'Uploaded'}:j).filter(j=>j.status!=='SYNCED');render()};document.getElementById('fail').onclick=()=>{state.jobs.push({status:'ERROR',id:`JOB-${Math.floor(900+Math.random()*99)}X`,detail:'Signature rejected',tries:1});render()};document.getElementById('reset').onclick=()=>{state.jobs=base.map(([status,id,detail],i)=>({status,id,detail,tries:i===3?3:0}));render()};render();
+    const BASE_JOBS = [
+      { status:'DRAFT',   id:'JOB-991A', detail:'Missing service notes',          tries:0, reason:null },
+      { status:'QUEUED',  id:'JOB-992B', detail:'Ready for upload',                tries:0, reason:'Waiting for network window. Will retry when online.' },
+      { status:'SYNCING', id:'JOB-993C', detail:'Uploading photos (3/5)',          tries:0, reason:null },
+      { status:'ERROR',   id:'JOB-994D', detail:'HTTP 503 — service unavailable',  tries:3, reason:'Upstream timeout on POST /snapshots. Retry #4 in 2 min 10 sec.' },
+    ];
+
+    // Q5: multi-tech fleet dataset — used only in Fleet Log Table view
+    const FLEET_JOBS = [
+      { tech:'T-01', status:'SYNCED',  id:'JOB-881A', detail:'Cooling maintenance complete', tries:0 },
+      { tech:'T-01', status:'ERROR',   id:'JOB-882B', detail:'HTTP 503 retry in 2m',         tries:3 },
+      { tech:'T-02', status:'SYNCING', id:'JOB-883C', detail:'Uploading photos',              tries:0 },
+      { tech:'T-02', status:'QUEUED',  id:'JOB-884D', detail:'Ready for upload',              tries:0 },
+      { tech:'T-03', status:'DRAFT',   id:'JOB-885E', detail:'Missing service notes',         tries:0 },
+      { tech:'T-03', status:'ERROR',   id:'JOB-886F', detail:'Signature rejected',            tries:2 },
+      { tech:'T-04', status:'QUEUED',  id:'JOB-887G', detail:'Ready for upload',              tries:0 },
+      { tech:'T-04', status:'SYNCING', id:'JOB-888H', detail:'Uploading performance delta',   tries:0 },
+    ];
+
+    const state = {
+      view:       'bars',
+      jobs:       BASE_JOBS.map(j => ({...j})),
+      keepSynced: false,
+      glare:      false,
+      expanded:   {},
+      glance:     null,   // { target, start, timerInterval }
+      glanceTimes:{ bars:[], badges:[], logs:[] },
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function counts() {
+      return state.jobs.reduce((a, j) => (a[j.status] = (a[j.status]||0)+1, a), {});
+    }
+
+    function sc(s) { return s.toLowerCase(); }
+
+    function badgeHTML(s) {
+      return `<span class="badge ${sc(s)}">${s}</span>`;
+    }
+
+    // Q3: expandable drawer for ERROR and QUEUED jobs
+    function drawerHTML(job) {
+      if (job.status !== 'ERROR' && job.status !== 'QUEUED') return '';
+      const open = state.expanded[job.id];
+      const detail = open
+        ? `<div class="row-drawer">
+            <div><dt>Tries</dt><dd>${job.tries}</dd></div>
+            <div><dt>Reason</dt><dd>${job.reason || '—'}</dd></div>
+            ${job.status === 'ERROR' ? `<div><dt>Next retry</dt><dd>~${1+Math.floor(job.tries*0.7)} min ${10+job.tries*7} sec</dd></div>` : ''}
+           </div>`
+        : '';
+      return `<button class="drawer-toggle" data-expand="${job.id}">${open ? '▲ hide details' : '▼ show details'}</button>${detail}`;
+    }
+
+    function rowsHTML() {
+      return `<div class="list">` + state.jobs.map(job => {
+        const glanceAttr = state.glance ? ` data-click-status="${job.status}"` : '';
+        const confirmedCls = job.status === 'SYNCED' ? ' confirmed' : '';
+        return `<div class="row${confirmedCls}"${glanceAttr}>
+          <div class="row-header">
+            ${badgeHTML(job.status)}
+            <strong>${job.id}</strong>
+            <span style="font-size:13px;color:var(--muted)">${job.detail}</span>
+          </div>
+          ${drawerHTML(job)}
+        </div>`;
+      }).join('') + `</div>`;
+    }
+
+    function summaryHTML() {
+      const c = counts();
+      return `<div class="summary">` +
+        ['DRAFT','QUEUED','SYNCING','ERROR'].map(k =>
+          `<div class="metric ${sc(k)}"><span>${k}</span><strong>${c[k]||0}</strong></div>`
+        ).join('') + `</div>`;
+    }
+
+    // Q1: glance test banner shown above job list
+    function glanceBannerHTML() {
+      if (!state.glance) return '';
+      return `<div class="glance-banner">
+        <div><strong>Find a job with status:</strong>&nbsp;${badgeHTML(state.glance.target)}
+          <span style="margin-left:12px;font-size:13px;opacity:.8">— click the matching row</span></div>
+        <div id="glance-inline-timer" style="font-size:18px;font-weight:800;color:#ffd580">0.0s</div>
+      </div>`;
+    }
+
+    // Q5: fleet table with multi-technician dataset
+    function fleetHTML() {
+      const rows = FLEET_JOBS.map(j => `<tr>
+        <td><span class="tech-chip">${j.tech}</span></td>
+        <td>${badgeHTML(j.status)}</td>
+        <td><strong>${j.id}</strong></td>
+        <td style="color:var(--muted);font-size:13px">${j.detail}</td>
+        <td style="text-align:center">${j.tries > 0 ? `<strong style="color:#b42318">${j.tries}</strong>` : '–'}</td>
+      </tr>`).join('');
+      return `
+        <p style="font-size:13px;color:var(--muted);margin:0 0 10px">Fleet manager view — 4 technicians, 8 jobs across devices. Compare with Bars/Badges (single-device) to answer Q5.</p>
+        <table class="fleet-table">
+          <thead><tr><th>Tech</th><th>Status</th><th>Job ID</th><th>Detail</th><th>Tries</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    function render() {
+      document.querySelectorAll('[data-view]').forEach(b =>
+        b.classList.toggle('active', b.dataset.view === state.view)
+      );
+      $('toggle-glare').textContent = `☀ Simulate Glare: ${state.glare ? 'ON' : 'OFF'}`;
+      $('toggle-glare').classList.toggle('on', state.glare);
+      $('toggle-keep').textContent = `Keep Confirmed: ${state.keepSynced ? 'ON' : 'OFF'}`;
+      $('toggle-keep').classList.toggle('on', state.keepSynced);
+
+      const surface = $('surface');
+      surface.className = 'surface'
+        + (state.view === 'badges' ? ' hc' : '')
+        + (state.glare ? ' glare-wrap' : '');
+
+      let html = '';
+      if (state.glance) html += glanceBannerHTML();
+
+      if (state.view === 'bars' || state.view === 'badges') {
+        html += summaryHTML();
+        if (state.glare) html += `<div class="glare-label">☀ SIMULATED OUTDOOR GLARE — can you still distinguish all four status states?</div>`;
+        html += rowsHTML();
+      } else {
+        html += fleetHTML();
+      }
+
+      surface.innerHTML = html;
+
+      // Wire Q3 drawer toggles (re-wired after each render)
+      document.querySelectorAll('[data-expand]').forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          state.expanded[btn.dataset.expand] = !state.expanded[btn.dataset.expand];
+          render();
+        };
+      });
+
+      // Wire Q1 glance-test row clicks
+      if (state.glance) {
+        document.querySelectorAll('[data-click-status]').forEach(row => {
+          row.onclick = () => {
+            if (row.dataset.clickStatus !== state.glance.target) return;
+            const elapsed = ((Date.now() - state.glance.start) / 1000).toFixed(2);
+            state.glanceTimes[state.view].push(parseFloat(elapsed));
+            clearInterval(state.glance.timerInterval);
+            state.glance = null;
+            updateGlanceTimes();
+            render();
+          };
+        });
+      }
+
+      const stateDisplay = {
+        view: state.view, keepSynced: state.keepSynced, glare: state.glare,
+        jobs: state.jobs.map(j => ({ id:j.id, status:j.status, tries:j.tries })),
+        glanceTimes: state.glanceTimes,
+        activeGlanceTarget: state.glance ? state.glance.target : null,
+      };
+      $('state').textContent = JSON.stringify(stateDisplay, null, 2);
+    }
+
+    function avg(arr) {
+      if (!arr.length) return '—';
+      return (arr.reduce((s,x)=>s+x,0)/arr.length).toFixed(1)+'s';
+    }
+
+    function updateGlanceTimes() {
+      $('glance-results').innerHTML =
+        `Bars:&nbsp;<strong>${avg(state.glanceTimes.bars)}</strong>&nbsp;&nbsp;`+
+        `Badges:&nbsp;<strong>${avg(state.glanceTimes.badges)}</strong>&nbsp;&nbsp;`+
+        `Fleet:&nbsp;<strong>${avg(state.glanceTimes.logs)}</strong>`;
+    }
+
+    // View buttons
+    document.querySelectorAll('[data-view]').forEach(b =>
+      b.onclick = () => { state.view = b.dataset.view; render(); }
+    );
+
+    // Advance sync — Q4: keepSynced toggles whether SYNCED rows are removed
+    $('tick').onclick = () => {
+      state.jobs = state.jobs.map(j => {
+        if (j.status === 'QUEUED')  return {...j, status:'SYNCING', detail:'Uploading snapshot…'};
+        if (j.status === 'SYNCING') return {...j, status:'SYNCED',  detail:'Uploaded ✓'};
+        return j;
+      });
+      if (!state.keepSynced) state.jobs = state.jobs.filter(j => j.status !== 'SYNCED');
+      render();
+    };
+
+    $('fail').onclick = () => {
+      const codes = ['HTTP 503', 'HTTP 401', 'Signature mismatch', 'Network timeout'];
+      const code = codes[Math.floor(Math.random() * codes.length)];
+      state.jobs.push({
+        status:'ERROR', id:`JOB-${800+state.jobs.length}X`,
+        detail:`${code} — upload rejected`,
+        tries:1+Math.floor(Math.random()*4),
+        reason:`${code} returned by sync server. Exponential backoff retry scheduled.`
+      });
+      render();
+    };
+
+    $('reset').onclick = () => {
+      state.jobs = BASE_JOBS.map(j => ({...j}));
+      state.expanded = {};
+      if (state.glance) { clearInterval(state.glance.timerInterval); state.glance = null; }
+      render();
+    };
+
+    // Q1: start glance test — picks a random status from current job list
+    $('glance-start').onclick = () => {
+      if (state.glance) { clearInterval(state.glance.timerInterval); state.glance = null; render(); return; }
+      const pool = state.view === 'logs'
+        ? [...new Set(FLEET_JOBS.map(j=>j.status))]
+        : [...new Set(state.jobs.map(j=>j.status))];
+      const target = pool[Math.floor(Math.random()*pool.length)];
+      const start = Date.now();
+      const timerInterval = setInterval(() => {
+        const el = $('glance-inline-timer');
+        if (el) el.textContent = ((Date.now()-start)/1000).toFixed(1)+'s';
+      }, 100);
+      state.glance = { target, start, timerInterval };
+      render();
+    };
+
+    $('toggle-glare').onclick = () => { state.glare = !state.glare; render(); };
+    $('toggle-keep').onclick = () => { state.keepSynced = !state.keepSynced; render(); };
+
+    render();
+    updateGlanceTimes();
   </script>
 </body>
 </html>

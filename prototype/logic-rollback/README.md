@@ -22,12 +22,13 @@ npm run prototype:logic-rollback
 
 ## Simulator Keyboard Shortcuts
 
-*   `[s]` **Verify Signature**: Marks the staged image as trusted and eligible for pending boot.
-*   `[b]` **Boot Pending**: Boots the pending slot without confirming it.
-*   `[t]` **Run Self-Test**: Simulates hardware self-test success on the pending firmware.
-*   `[c]` **Confirm Firmware**: Confirms the pending slot only after signature and self-test pass.
-*   `[w]` **Watchdog Crash**: Simulates a crash during pending boot and rolls back.
-*   `[h]` **Hold RA+SA Rollback**: Simulates physical rollback override during power-up.
+*   `[d]` **Download/Stage**: Downloads the candidate image to slot B — enters `STAGED_UNVERIFIED`. No signature check yet; not pending.
+*   `[s]` **Verify Signature**: Verifies the staged image — this is the transition that sets `pending`. Requires `[d]` first.
+*   `[b]` **Boot Pending**: Boots the pending slot. Blocked with a counter increment if the image is staged but not yet signature-verified.
+*   `[t]` **Run Self-Test**: Simulates hardware self-test success on the pending firmware. Required before confirm.
+*   `[c]` **Confirm Firmware**: Confirms the pending slot — gated on both signature and self-test. Shows what's missing if either is absent.
+*   `[w]` **Watchdog Crash**: Fires the watchdog — rolls active back to last confirmed slot and clears all update state.
+*   `[h]` **Hold RA+SA Override**: Physical rollback at power-up — forces active to confirmed regardless of software state. Works in any phase.
 *   `[r]` **Reset**: Restores the initial confirmed-slot state.
 *   `[q]` **Quit**: Exits the simulator.
 
@@ -35,7 +36,8 @@ npm run prototype:logic-rollback
 
 ## What To Watch
 
-*   The active partition should not change until pending boot is requested.
-*   The confirmed partition should not change until self-test and confirmation complete.
-*   Watchdog failures during pending boot should clear the pending slot.
-*   Physical rollback should always return to the last confirmed slot.
+*   **Q1**: Watch the `FSM Phase` label step through `CONFIRMED → STAGED_UNVERIFIED → AWAITING_BOOT` — the `AWAITING_BOOT` transition (after `[s]`) is exactly when pending is set.
+*   **Q2**: Press `[d]` to stage, then immediately press `[b]` — the `Blocked boot attempts` counter should increment and the event log should show `[BLOCKED Q2]`. Signature must come first.
+*   **Q3**: After `[d]` → `[s]` → `[b]`, press `[c]` without pressing `[t]` first — confirm should be refused with a message naming what's missing.
+*   **Q4**: After `[d]` → `[s]` → `[b]`, press `[w]` — active should roll back to the last confirmed slot and all pending state should clear.
+*   **Q5**: Get into `PENDING_BOOT` (without running self-test, simulating a stuck confirmation) then press `[h]` — physical override should force rollback regardless of software state.

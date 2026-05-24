@@ -8,7 +8,8 @@
 
 ## How to use this file
 
-1. **Skills drive the process. Agents fill the seats.** Run a skill (`/grill-with-docs`, `/to-prd`, etc.) to structure the work. Inside a skill, activate the agent whose card matches the current question.
+1. **Read the Docs First.** Before making any decisions or starting execution, you MUST read `CONTEXT.md` and the `docs/` directory (specifically the PRD and ADRs) to understand project constraints and domain language.
+2. **Skills drive the process. Agents fill the seats.** Run a skill (`/grill-with-docs`, `/to-prd`, etc.) to structure the work. Inside a skill, activate the agent whose card matches the current question.
 2. **One question at a time.** Never run more than 2 agents in parallel except during Phase 8 (adversarial review). Parallel design produces contradictions; serial design produces decisions.
 3. **Triggers before titles.** Match on the **Trigger** column, not the agent's name. If no trigger matches, the right answer is usually "ask the user," not "pick the closest-sounding agent."
 4. **Update this file when reality changes.** See [Update protocol](#update-protocol) at the bottom.

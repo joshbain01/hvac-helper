@@ -202,6 +202,21 @@ function render() {
   console.log(`  Cloud Server Database: [${C.bold}${cloudDbSize}${C.reset} snapshots synchronized]`);
   console.log(`${C.dim}─────────────────────────────────────────────────────────────────────────────${C.reset}`);
 
+  // Q6: NVS telemetry log — OCR_MANUAL_OVERRIDE, SENSOR_FAULT, POINT_EXPIRED, TIMEOUT_CONFIG_CHANGED
+  const nvs = sim.device.nvsLogs;
+  console.log(`  ${C.bold}DEVICE NVS TELEMETRY (Q6 — manual override, faults, expirations):${C.reset}`);
+  if (nvs.length === 0) {
+    console.log(`  ${C.dim}(empty — events appear here after [u] override, [y] fault, or [m] expire)${C.reset}`);
+  } else {
+    nvs.slice(-5).reverse().forEach(entry => {
+      const ts = new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const color = entry.event === 'OCR_MANUAL_OVERRIDE' ? C.yellow : entry.event === 'SENSOR_FAULT' ? C.red : C.dim;
+      console.log(`  [${C.dim}${ts}${C.reset}] ${color}${entry.event}${C.reset} — ${entry.details}`);
+    });
+    if (nvs.length > 5) console.log(`  ${C.dim}(+ ${nvs.length - 5} older entries)${C.reset}`);
+  }
+  console.log(`${C.dim}─────────────────────────────────────────────────────────────────────────────${C.reset}`);
+
   // Display notification if any
   if (notificationMessage) {
     console.log(`  ${C.bold}SYSTEM EVENT:${C.reset} ${notificationColor}${notificationMessage}${C.reset}`);

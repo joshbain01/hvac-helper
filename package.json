@@ -4,9 +4,15 @@
   "description": "HVAC Helper Pro - Handheld Troubleshooting Device and Paired Mobile Application",
   "type": "module",
   "scripts": {
+    "prototype:logic-pricing": "node prototype/logic-pricing/index.js",
+    "prototype:logic-before-after": "node prototype/logic-before-after/index.js",
     "prototype:logic-state": "node prototype/logic-state/index.js",
+    "prototype:logic-ble-binary": "node prototype/logic-ble-binary/index.js",
+    "prototype:logic-fsm-sync": "node prototype/logic-fsm-sync/index.js",
     "prototype:logic-ble-ota": "node prototype/logic-ble-ota/index.js",
     "prototype:logic-rollback": "node prototype/logic-rollback/index.js",
+    "prototype:logic-self-test": "node prototype/logic-self-test/index.js",
+    "prototype:ui-llm-notes": "node prototype/ui-llm-notes/server.js",
     "prototype:ui-outbox-sync": "node prototype/ui-outbox-sync/server.js",
     "prototype:ui-ocr-scanner": "node prototype/ui-ocr-scanner/server.js",
     "compile-tokens": "node scripts/generate-tokens.js"

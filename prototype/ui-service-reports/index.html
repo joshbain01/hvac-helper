@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HVAC Helper Pro - Service Reports</title>
   <style>
-    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:#e9eef3;color:#17212b} header{background:#18344a;color:white;padding:18px 22px;display:flex;justify-content:space-between;gap:16px;align-items:center} h1{font-size:21px;margin:0} p{line-height:1.45}.wrap{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:18px}.panel,.report{background:white;border:1px solid #c9d3dc;border-radius:8px;padding:16px}.controls{display:grid;gap:10px}.controls button{min-height:44px;border:1px solid #8ca3b8;background:#f7fafc;border-radius:6px;font-weight:700}.controls button.active{outline:3px solid #f1b84b}.report{max-width:860px;margin:auto}.hero{display:grid;grid-template-columns:1fr 160px;gap:16px;align-items:center;border-bottom:2px solid #d9e2ea;padding-bottom:14px}.score{height:132px;border-radius:50%;display:grid;place-items:center;background:#e7f6ee;color:#197348;font-size:42px;font-weight:800;border:10px solid #39a96b}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.metric{background:#f5f8fb;border:1px solid #d8e1e9;border-radius:6px;padding:12px}.metric strong{display:block;font-size:20px}.ledger table{width:100%;border-collapse:collapse}.ledger td,.ledger th{border-bottom:1px solid #d8e1e9;text-align:left;padding:10px}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.work{border-left:6px solid #1d5f9f;background:#f6fbff;padding:12px;border-radius:6px}.state{font-size:12px;white-space:pre-wrap;background:#102a43;color:white;padding:10px;border-radius:6px}.footerbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:#102a43;padding:8px;border-radius:8px}.footerbar button{color:white;background:#284b66;border:1px solid #496a84;border-radius:6px;min-height:38px}@media(max-width:800px){.wrap,.hero,.grid,.cards{grid-template-columns:1fr}header{display:block}}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:#e9eef3;color:#17212b} header{background:#18344a;color:white;padding:18px 22px;display:flex;justify-content:space-between;gap:16px;align-items:center} h1{font-size:21px;margin:0} p{line-height:1.45}.wrap{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:18px}.panel,.report{background:white;border:1px solid #c9d3dc;border-radius:8px;padding:16px}.controls{display:grid;gap:10px}.controls button{min-height:44px;border:1px solid #8ca3b8;background:#f7fafc;border-radius:6px;font-weight:700}.controls button.active{outline:3px solid #f1b84b}.report{max-width:860px;margin:auto}.hero{display:grid;grid-template-columns:1fr 160px;gap:16px;align-items:center;border-bottom:2px solid #d9e2ea;padding-bottom:14px}.score{height:132px;border-radius:50%;display:grid;place-items:center;background:#e7f6ee;color:#197348;font-size:42px;font-weight:800;border:10px solid #39a96b}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.metric{background:#f5f8fb;border:1px solid #d8e1e9;border-radius:6px;padding:12px}.metric strong{display:block;font-size:20px}.ledger table{width:100%;border-collapse:collapse}.ledger td,.ledger th{border-bottom:1px solid #d8e1e9;text-align:left;padding:10px}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.work{border-left:6px solid #1d5f9f;background:#f6fbff;padding:12px;border-radius:6px}.state{font-size:12px;white-space:pre-wrap;background:#102a43;color:white;padding:10px;border-radius:6px}.footerbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:12px;background:#102a43;padding:8px 16px;border-radius:24px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.2)}.footerbar button{color:white;background:#284b66;border:1px solid #496a84;border-radius:6px;min-height:38px;padding:0 16px}@media(max-width:800px){.wrap,.hero,.grid,.cards{grid-template-columns:1fr}header{display:block}}
   </style>
 </head>
 <body>
@@ -20,14 +20,57 @@
     </aside>
     <section class="report" id="report"></section>
   </main>
-  <nav class="footerbar"><button data-theme="infographic">Infographic</button><button data-theme="ledger">Ledger</button><button data-theme="workcard">Work Card</button></nav>
+  <nav class="footerbar">
+    <button id="prev-btn">←</button>
+    <span id="variant-label" style="color:white; font-weight:bold; min-width:160px; text-align:center;">Infographic</span>
+    <button id="next-btn">→</button>
+  </nav>
   <script>
-    const state={theme:'infographic',photos:true,customer:'Jenkins Residence',system:'3 ton split AC',health:88,before:{deltaT:12.1,superheat:22.4,subcooling:5.7},after:{deltaT:17.2,superheat:12.2,subcooling:10.4},work:['Cleaned condenser coil','Replaced 16x25x1 filter','Added 0.5 lb R-410A','Verified cooling performance']};
+    const variants = [
+      { id: 'infographic', name: 'Infographic' },
+      { id: 'ledger', name: 'Compliance Ledger' },
+      { id: 'workcard', name: 'Work Completed Card' }
+    ];
+    const params = new URLSearchParams(window.location.search);
+    const initialTheme = params.get('variant') || 'infographic';
+    const state={theme:initialTheme,photos:true,customer:'Jenkins Residence',system:'3 ton split AC',health:88,before:{deltaT:12.1,superheat:22.4,subcooling:5.7},after:{deltaT:17.2,superheat:12.2,subcooling:10.4},work:['Cleaned condenser coil','Replaced 16x25x1 filter','Added 0.5 lb R-410A','Verified cooling performance']};
+    if (!variants.find(v => v.id === state.theme)) state.theme = 'infographic';
     const report=document.getElementById('report'); const label=document.getElementById('theme-label'); const dump=document.getElementById('state');
+    const variantLabel=document.getElementById('variant-label');
     function metrics(){return `<div class="grid"><div class="metric"><span>Delta T</span><strong>${state.before.deltaT} -> ${state.after.deltaT}F</strong></div><div class="metric"><span>Superheat</span><strong>${state.before.superheat} -> ${state.after.superheat}F</strong></div><div class="metric"><span>Subcooling</span><strong>${state.before.subcooling} -> ${state.after.subcooling}F</strong></div></div>`}
     function photos(){return state.photos?'<div class="grid"><div class="metric">Before photo<br><strong>Coil dirty</strong></div><div class="metric">After photo<br><strong>Coil clean</strong></div><div class="metric">Service tag<br><strong>Verified</strong></div></div>':''}
-    function render(){document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===state.theme));label.textContent=state.theme;dump.textContent=JSON.stringify(state,null,2); if(state.theme==='infographic'){report.innerHTML=`<div class="hero"><div><h2>${state.customer}</h2><p>${state.system} serviced today. Cooling performance improved and required measurements were verified.</p></div><div class="score">${state.health}</div></div>${metrics()}${photos()}`;} if(state.theme==='ledger'){report.innerHTML=`<div class="ledger"><h2>Technical Service Ledger</h2><table><tr><th>Field</th><th>Before</th><th>After</th></tr><tr><td>Delta T</td><td>${state.before.deltaT}F</td><td>${state.after.deltaT}F</td></tr><tr><td>Superheat</td><td>${state.before.superheat}F</td><td>${state.after.superheat}F</td></tr><tr><td>Subcooling</td><td>${state.before.subcooling}F</td><td>${state.after.subcooling}F</td></tr></table>${photos()}</div>`;} if(state.theme==='workcard'){report.innerHTML=`<h2>Work Completed</h2><div class="cards">${state.work.map(w=>`<div class="work">${w}</div>`).join('')}</div>${metrics()}${photos()}`;}}
-    document.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{state.theme=b.dataset.theme;render()});document.getElementById('toggle').onclick=()=>{state.photos=!state.photos;render()};render();
+    function render(){
+      const curr = variants.find(v => v.id === state.theme);
+      document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===state.theme));
+      label.textContent=curr.name;
+      variantLabel.textContent=curr.name;
+      dump.textContent=JSON.stringify(state,null,2); 
+      if(state.theme==='infographic'){report.innerHTML=`<div class="hero"><div><h2>${state.customer}</h2><p>${state.system} serviced today. Cooling performance improved and required measurements were verified.</p></div><div class="score">${state.health}</div></div>${metrics()}${photos()}`;} 
+      if(state.theme==='ledger'){report.innerHTML=`<div class="ledger"><h2>Technical Service Ledger</h2><table><tr><th>Field</th><th>Before</th><th>After</th></tr><tr><td>Delta T</td><td>${state.before.deltaT}F</td><td>${state.after.deltaT}F</td></tr><tr><td>Superheat</td><td>${state.before.superheat}F</td><td>${state.after.superheat}F</td></tr><tr><td>Subcooling</td><td>${state.before.subcooling}F</td><td>${state.after.subcooling}F</td></tr></table>${photos()}</div>`;} 
+      if(state.theme==='workcard'){report.innerHTML=`<h2>Work Completed</h2><div class="cards">${state.work.map(w=>`<div class="work">${w}</div>`).join('')}</div>${metrics()}${photos()}`;}
+    }
+    function updateTheme(newTheme) {
+      state.theme = newTheme;
+      const url = new URL(window.location);
+      url.searchParams.set('variant', newTheme);
+      window.history.replaceState({}, '', url);
+      render();
+    }
+    function cycleTheme(dir) {
+      let idx = variants.findIndex(v => v.id === state.theme);
+      idx = (idx + dir + variants.length) % variants.length;
+      updateTheme(variants[idx].id);
+    }
+    document.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{updateTheme(b.dataset.theme)});
+    document.getElementById('toggle').onclick=()=>{state.photos=!state.photos;render()};
+    document.getElementById('prev-btn').onclick=()=>cycleTheme(-1);
+    document.getElementById('next-btn').onclick=()=>cycleTheme(1);
+    window.addEventListener('keydown', e => {
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+      if (e.key === 'ArrowLeft') cycleTheme(-1);
+      if (e.key === 'ArrowRight') cycleTheme(1);
+    });
+    render();
   </script>
 </body>
 </html>
