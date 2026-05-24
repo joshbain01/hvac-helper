@@ -35,17 +35,20 @@ Each prototype is isolated in its own sub-directory under `prototype/` and can b
     npm run prototype:logic-ble-ota
     ```
 
+### 4. [LLM Work Note & Consumables Checklist](ui-llm-notes)
+*   **Directory**: [`prototype/ui-llm-notes`](ui-llm-notes)
+*   **Question Answered**: How should the app present expanded professional notes and suggested consumables checklists so the technician can review and correct them in under 15 seconds?
+*   **Type**: Web Application Prototype (HTML/CSS/JS)
+*   **Run Command**:
+    ```bash
+    npm run prototype:ui-llm-notes
+    ```
+
 ---
 
 ## 📅 Planned Prototypes Roadmap
 
 To clarify design patterns, hardware diagnostics, and APIs, the following prototypes are planned to be implemented sequentially:
-
-### 3. [PLANNED] LLM Work Note & Consumables Checklist (UI Prototype)
-*   **Target Directory**: `prototype/ui-llm-notes`
-*   **Run Command**: `npm run prototype:ui-llm-notes`
-*   **Question to Answer**: How should the app present expanded professional notes and suggested consumables checklists so the technician can review and correct them in under 15 seconds?
-*   **Description**: Mockups displaying dynamic inline expansion, a multi-step checklist wizard with glove-friendly tap zones, and a side-by-side comparison screen.
 
 ### 4. [PLANNED] Partition Swap & Rollback Simulator (Logic Prototype)
 *   **Target Directory**: `prototype/logic-rollback`
