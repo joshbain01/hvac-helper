@@ -82,3 +82,7 @@ If `total_usd + estimated_run_cost > 20.00`, skip LLM call, log warning to stder
 
 - [0030 — Telemetry Schema & SQLite Database Init](./0030-telemetry-schema-db-init.md)
 - [0031 — FastAPI Read-Only Query Middleware](./0031-fastapi-query-middleware.md)
+
+## Labels
+enhancement, ready-for-agent
+

@@ -1,0 +1,11 @@
+{
+  "scenario_id": "be9522cd-2888-5902-82be-deb1347b62ed",
+  "workflow": "B",
+  "network_cond": "NET_RF_INTERFERENCE",
+  "power_state": "PWR_SLEEP_3",
+  "sensor_state": "SENS_SHT40_DRIFT",
+  "ocr_path": "OCR_SUCCESS",
+  "llm_path": "LLM_CLOUD_FALLBACK",
+  "phase": "1b",
+  "repeat_count": 1
+}

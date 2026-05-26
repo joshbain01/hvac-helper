@@ -82,3 +82,7 @@ Exit: 1 (warning)
 - [0035 — Vertical Workflow Test Runner — Phase 1A](./0035-test-runner-phase-1a.md)
 - [0037 — Kimi K2.5 Daily Analysis Pipeline](./0037-ai-analysis-pipeline.md)
 - [0038 — Docker Compose Containers + Raspberry Pi Setup](./0038-docker-pi-setup.md)
+
+## Labels
+enhancement, ready-for-agent
+

@@ -1,0 +1,11 @@
+{
+  "scenario_id": "45f82667-4ef2-59d4-8b8e-781add110418",
+  "workflow": "C",
+  "network_cond": "NET_OFFLINE_2H",
+  "power_state": "PWR_SLEEP_3",
+  "sensor_state": "SENS_NORMAL",
+  "ocr_path": "OCR_SUCCESS",
+  "llm_path": "LLM_OOM",
+  "phase": "1b",
+  "repeat_count": 1
+}

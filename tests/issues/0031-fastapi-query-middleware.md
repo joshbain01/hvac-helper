@@ -68,3 +68,7 @@ POST /hypotheses    → Agent submits a new scenario hypothesis for next batch
 ## Blocked by
 
 - [0030 — Telemetry Schema & SQLite Database Init](./0030-telemetry-schema-db-init.md)
+
+## Labels
+enhancement, ready-for-agent
+

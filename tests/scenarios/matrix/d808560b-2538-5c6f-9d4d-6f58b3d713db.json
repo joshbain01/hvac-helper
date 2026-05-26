@@ -1,0 +1,11 @@
+{
+  "scenario_id": "d808560b-2538-5c6f-9d4d-6f58b3d713db",
+  "workflow": "B",
+  "network_cond": "NET_LOSS_20",
+  "power_state": "PWR_CONTINUOUS",
+  "sensor_state": "SENS_CLAMP_DISCONNECTED",
+  "ocr_path": "OCR_SUCCESS",
+  "llm_path": "LLM_SUCCESS",
+  "phase": "1a",
+  "repeat_count": 1
+}

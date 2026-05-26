@@ -57,3 +57,7 @@ Extend `tests/simulator/mock_device.py` (built in issue 0032) with all fault inj
 ## Blocked by
 
 - [0032 — Mock ESP32 BLE Simulator — Core](./0032-ble-simulator-core.md)
+
+## Labels
+enhancement, ready-for-agent
+

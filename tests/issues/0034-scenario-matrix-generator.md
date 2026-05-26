@@ -56,6 +56,8 @@ The generator also produces `tests/scenarios/phase_1a.json` — an index of the 
 - [ ] Re-running the generator is idempotent (same scenario_ids produced from same seed)
 - [ ] pytest test confirms: `len(matrix/) == 360`, all unique, phase_1a has 60 entries
 
-## Blocked by
+- [0030 — Telemetry Schema & SQLite Database Init](./0030-telemetry-schema-db-init.md)
 
-None — can start immediately
+## Labels
+enhancement, ready-for-agent
+

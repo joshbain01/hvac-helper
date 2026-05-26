@@ -1,0 +1,11 @@
+{
+  "scenario_id": "45cf2e82-8c87-56d9-a914-7b5ef51af300",
+  "workflow": "B",
+  "network_cond": "NET_NORMAL",
+  "power_state": "PWR_CONTINUOUS",
+  "sensor_state": "SENS_BOTH_FAULT",
+  "ocr_path": "OCR_SUCCESS",
+  "llm_path": "LLM_CLOUD_FALLBACK",
+  "phase": "1b",
+  "repeat_count": 1
+}

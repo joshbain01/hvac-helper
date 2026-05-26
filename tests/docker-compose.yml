@@ -1,0 +1,26 @@
+services:
+  hvac-harness:
+    build: ./harness
+    volumes:
+      - test-data:/data
+      - /var/run/dbus:/var/run/dbus
+    privileged: true
+    env_file: .env
+    profiles: [run]
+
+  hvac-api:
+    build: ./api
+    ports:
+      - "8080:8080"
+    volumes:
+      - test-data:/data:ro
+    env_file: .env
+    restart: unless-stopped
+
+volumes:
+  test-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/hvac-tests/data

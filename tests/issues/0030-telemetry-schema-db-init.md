@@ -77,3 +77,6 @@ Deliver:
 ## Blocked by
 
 None — can start immediately
+
+## Labels
+enhancement, ready-for-agent

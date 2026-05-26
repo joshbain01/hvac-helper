@@ -105,3 +105,7 @@ DB_PATH=/data/test_telemetry.db
 - [0030 — Telemetry Schema & SQLite Database Init](./0030-telemetry-schema-db-init.md)
 - [0031 — FastAPI Read-Only Query Middleware](./0031-fastapi-query-middleware.md)
 - [0032 — Mock ESP32 BLE Simulator — Core](./0032-ble-simulator-core.md)
+
+## Labels
+enhancement, ready-for-human
+

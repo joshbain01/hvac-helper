@@ -64,3 +64,7 @@ All actions must write ADR-0014 compliant events to the `telemetry_logs` SQLite 
 ## Blocked by
 
 - [0030 — Telemetry Schema & SQLite Database Init](./0030-telemetry-schema-db-init.md)
+
+## Labels
+enhancement, ready-for-agent
+

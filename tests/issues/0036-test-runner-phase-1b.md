@@ -47,3 +47,7 @@ After completion, writes a full summary report to `/data/reports/YYYY-MM-DD-phas
 ## Blocked by
 
 - [0035 — Vertical Workflow Test Runner — Phase 1A](./0035-test-runner-phase-1a.md)
+
+## Labels
+enhancement, ready-for-agent
+

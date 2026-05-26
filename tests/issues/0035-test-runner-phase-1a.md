@@ -80,3 +80,7 @@ After completion, writes a summary Markdown report to `/data/reports/YYYY-MM-DD-
 - [0031 — FastAPI Read-Only Query Middleware](./0031-fastapi-query-middleware.md)
 - [0033 — Mock ESP32 BLE Simulator — Fault Injection](./0033-ble-simulator-fault-injection.md)
 - [0034 — Scenario Matrix Generator](./0034-scenario-matrix-generator.md)
+
+## Labels
+enhancement, ready-for-agent
+
