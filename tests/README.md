@@ -16,42 +16,75 @@ This directory contains the automated vertical workflow test suite and AI-driven
 
 To deploy the test suite onto a Raspberry Pi 5:
 
-1. Clone or copy the project files to the Pi.
-2. Run the automated setup script:
+1. **Clone the repository** onto your Raspberry Pi:
    ```bash
-   chmod +x scripts/setup_pi.sh
-   ./scripts/setup_pi.sh
+   git clone https://github.com/joshbain01/hvac-helper.git
+   cd hvac-helper
    ```
-3. Update the generated `.env` file at `/opt/hvac-tests/.env` with your actual OpenRouter keys and tokens:
+
+2. **Run the automated setup script** (must be run from the repository root):
+   ```bash
+   chmod +x tests/scripts/setup_pi.sh
+   ./tests/scripts/setup_pi.sh
+   ```
+   *Note: This script will install Docker (if missing), copy application code to `/opt/hvac-tests/`, generate the `.env` file, build containers, initialize the database schema, and set up daily/weekly crontab entries.*
+
+3. **Update the generated `.env` file** at `/opt/hvac-tests/.env` with your OpenRouter credentials and bearer token:
+   ```bash
+   sudo nano /opt/hvac-tests/.env
+   ```
+   Provide your values for the environment variables:
    ```env
-   API_BEARER_TOKEN=secure-auth-token-here
-   OPENROUTER_API_KEY=your-openrouter-key-here
+   API_BEARER_TOKEN=your-secure-auth-token-here
+   OPENROUTER_API_KEY=your-openrouter-api-key-here
    KIMI_MODEL=moonshotai/kimi-k2.5
    DB_PATH=/data/test_telemetry.db
    ```
 
-## CLI Usage Guide
+---
 
-You can run individual scenarios, hypotheses, or full suite phases directly:
+## Docker Compose CLI Guide (Raspberry Pi)
+
+All tests, runners, and scripts should be run from `/opt/hvac-tests` using `docker compose`:
 
 ```bash
-# Run Phase 1A (60 critical path scenarios) sequentially
-python harness/runner.py --phase 1a
+# Navigate to the deployment directory
+cd /opt/hvac-tests
 
-# Run Phase 1B (all 360 scenarios) in parallel with worker pool
-python harness/runner.py --phase 1b
+# 1. Run Phase 1A (60 critical path scenarios) sequentially
+docker compose run --rm hvac-harness python runner.py --phase 1a
 
-# Run a specific scenario by scenario_id
-python harness/runner.py --scenario <scenario_id>
+# 2. Run Phase 1B (all 360 scenarios) in parallel
+docker compose run --rm hvac-harness python runner.py --phase 1b
 
-# Run a specific agent-proposed hypothesis
-python harness/runner.py --hypothesis <hypothesis_id>
+# 3. Run a specific scenario by scenario_id
+docker compose run --rm hvac-harness python runner.py --scenario <scenario_id>
+
+# 4. Trigger the Kimi daily failure analysis pipeline manually
+docker compose run --rm hvac-harness python agent_analysis.py
+
+# 5. Generate the Weekly HTML summary report dashboard
+docker compose run --rm hvac-harness python scripts/generate_report.py
+
+# 6. Run the CLI infrastructure health check tool
+docker compose run --rm hvac-harness python scripts/health_check.py
 ```
 
-## Running the Automated Test Suite
+### Checking Logs and Services
+- To view logs of the running FastAPI database middleware: `docker compose logs hvac-api`
+- To stop the API container: `docker compose down`
+- To restart all background services: `docker compose up -d`
 
-To run all pytest tests verifying the API middleware, simulator, scenario generator, and harness:
+---
+
+## Local Development CLI Guide (Non-Docker)
+
+If you are developing locally or testing outside of Docker on a host system with python installed:
 
 ```bash
+# Run Phase 1A locally
+python harness/runner.py --phase 1a
+
+# Run all pytest test files (API, BLE Simulator, Matrix, Pipeline, and Scripts)
 python -m pytest tests/
 ```
