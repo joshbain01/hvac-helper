@@ -347,5 +347,7 @@ def reset_snapshots():
 
 # Mount the static UI at the root directory
 # This MUST be at the bottom so it doesn't intercept defined API routes
-if os.path.isdir("ui"):
-    app.mount("/", StaticFiles(directory="ui", html=True), name="ui")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UI_DIR = os.path.join(BASE_DIR, "ui")
+if os.path.isdir(UI_DIR):
+    app.mount("/", StaticFiles(directory=UI_DIR, html=True), name="ui")
