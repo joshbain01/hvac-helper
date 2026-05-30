@@ -1,0 +1,20 @@
+# Ansible inventory for HVAC Helper Pi fleet.
+# Copy to inventory.ini (gitignored) and fill in your hosts.
+#
+# Usage:
+#   cp ansible/inventory.ini.example ansible/inventory.ini
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
+#
+# To run against a single host only:
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yml --limit pi-lab-01
+
+[pi_fleet]
+pi-lab-01  ansible_host=192.168.1.10  ansible_user=josh
+pi-lab-02  ansible_host=192.168.1.11  ansible_user=josh
+# pi-lab-03  ansible_host=192.168.1.12  ansible_user=josh
+
+[pi_fleet:vars]
+ansible_ssh_private_key_file=~/.ssh/id_ed25519
+repo_url=https://github.com/joshbain01/hvac-helper.git
+repo_dest=/opt/hvac-tests
+log_dir=/var/log/hvac-tests

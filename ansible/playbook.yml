@@ -1,0 +1,196 @@
+---
+# HVAC Helper Pi Fleet Provisioning Playbook
+#
+# Idempotent — safe to run against a machine that is already set up.
+# Run against all machines:
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
+#
+# Run against one machine:
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yml --limit pi-lab-01
+#
+# After adding a new Pi, also run the key-registration step:
+#   tests/scripts/add-pi-key.sh <pi-host>
+
+- name: Provision HVAC Helper Pi compute module
+  hosts: pi_fleet
+  become: true
+
+  vars:
+    actual_user: "{{ ansible_user }}"
+    repo_url: "https://github.com/joshbain01/hvac-helper.git"
+    repo_dest: "/opt/hvac-tests"
+    log_dir: "/var/log/hvac-tests"
+
+  tasks:
+
+    # ── 1. System packages ──────────────────────────────────────────────────
+    - name: Install Docker prerequisites
+      apt:
+        name: [ca-certificates, curl, gnupg, lsb-release]
+        state: present
+        update_cache: true
+
+    - name: Check if Docker is installed
+      command: docker --version
+      register: docker_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Docker Engine
+      shell: curl -fsSL https://get.docker.com | sh
+      when: docker_check.rc != 0
+
+    - name: Add user to docker group
+      user:
+        name: "{{ actual_user }}"
+        groups: docker
+        append: true
+
+    - name: Install age (secrets decryption)
+      apt:
+        name: age
+        state: present
+
+    - name: Install sops
+      get_url:
+        url: https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.arm64
+        dest: /usr/local/bin/sops
+        mode: "0755"
+
+    - name: Install git
+      apt:
+        name: git
+        state: present
+
+    # ── 2. Directories ──────────────────────────────────────────────────────
+    - name: Create repo directory
+      file:
+        path: "{{ repo_dest }}"
+        state: directory
+        owner: "{{ actual_user }}"
+        group: "{{ actual_user }}"
+        mode: "0755"
+
+    - name: Create log directory
+      file:
+        path: "{{ log_dir }}"
+        state: directory
+        owner: "{{ actual_user }}"
+        group: "{{ actual_user }}"
+        mode: "0755"
+
+    - name: Create data directory
+      file:
+        path: "{{ repo_dest }}/data"
+        state: directory
+        owner: "{{ actual_user }}"
+        group: "{{ actual_user }}"
+        mode: "0755"
+
+    # ── 3. Clone repo ───────────────────────────────────────────────────────
+    - name: Clone or update hvac-helper repo
+      become_user: "{{ actual_user }}"
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dest }}"
+        version: main
+        force: false        # don't clobber local changes (e.g. .env)
+        update: true
+
+    - name: Mark repo as git safe.directory
+      become_user: "{{ actual_user }}"
+      command: git config --global --add safe.directory {{ repo_dest }}
+      changed_when: false
+
+    # ── 4. Age key: generate once per Pi ────────────────────────────────────
+    - name: Create sops age key directory
+      become_user: "{{ actual_user }}"
+      file:
+        path: "/home/{{ actual_user }}/.config/sops/age"
+        state: directory
+        mode: "0700"
+
+    - name: Check if age key already exists
+      become_user: "{{ actual_user }}"
+      stat:
+        path: "/home/{{ actual_user }}/.config/sops/age/keys.txt"
+      register: age_key_stat
+
+    - name: Generate age key (first-time only)
+      become_user: "{{ actual_user }}"
+      command: age-keygen -o /home/{{ actual_user }}/.config/sops/age/keys.txt
+      when: not age_key_stat.stat.exists
+
+    - name: Read this Pi's age public key
+      become_user: "{{ actual_user }}"
+      command: grep "public key:" /home/{{ actual_user }}/.config/sops/age/keys.txt
+      register: pi_age_pubkey
+      changed_when: false
+
+    - name: Print age public key (copy this to .sops.yaml on your dev machine)
+      debug:
+        msg: |
+          ┌─────────────────────────────────────────────────────────────────┐
+          │  Pi: {{ inventory_hostname }}
+          │  Age public key: {{ pi_age_pubkey.stdout | regex_replace('.*public key: ', '') }}
+          │
+          │  Next steps on your dev machine:
+          │    1. Add this key to .sops.yaml (age: field, comma-separated)
+          │    2. sops updatekeys tests/.env.enc
+          │    3. git add .sops.yaml tests/.env.enc && git push
+          └─────────────────────────────────────────────────────────────────┘
+
+    # ── 5. .env.example validation ──────────────────────────────────────────
+    - name: Copy .env.example if no .env exists yet
+      become_user: "{{ actual_user }}"
+      copy:
+        src: "{{ repo_dest }}/tests/.env.example"
+        dest: "{{ repo_dest }}/tests/.env"
+        remote_src: true
+        force: false        # never overwrite an existing .env
+
+    # ── 6. Cron jobs ─────────────────────────────────────────────────────────
+    - name: Install auto-deploy cron (hvac-deploy)
+      copy:
+        dest: /etc/cron.d/hvac-deploy
+        content: |
+          # HVAC Helper auto-deploy: pulls origin/main every 5 min, rebuilds Docker on new commits.
+          # Logging → {{ log_dir }}/auto_deploy.log
+          */5 * * * * {{ actual_user }} {{ repo_dest }}/auto_deploy.sh
+        mode: "0644"
+
+    - name: Install test suite cron (hvac-test-suite)
+      copy:
+        dest: /etc/cron.d/hvac-test-suite
+        content: |
+          # Run Phase 1A (60 scenarios) weekdays at 06:00
+          0 6 * * 1-5 {{ actual_user }} cd {{ repo_dest }}/tests && docker compose run --rm hvac-harness python harness/test_runner.py --phase 1a >> {{ log_dir }}/daily.log 2>&1
+          # Run full 360 scenarios every Saturday at 06:00
+          0 6 * * 6 {{ actual_user }} cd {{ repo_dest }}/tests && docker compose run --rm hvac-harness python harness/test_runner.py --phase 1b >> {{ log_dir }}/weekly.log 2>&1
+          # AI analysis 30 minutes after daily suite
+          30 6 * * 1-5 {{ actual_user }} cd {{ repo_dest }}/tests && docker compose run --rm hvac-harness python analysis/agent_analysis.py >> {{ log_dir }}/analysis.log 2>&1
+        mode: "0644"
+
+    # ── 7. OS security updates ───────────────────────────────────────────────
+    - name: Install unattended-upgrades
+      apt:
+        name: unattended-upgrades
+        state: present
+
+    - name: Configure unattended-upgrades (security only)
+      copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+          APT::Periodic::AutocleanInterval "7";
+        mode: "0644"
+
+    # ── 8. Initial Docker build ──────────────────────────────────────────────
+    - name: Build and start containers (first-time or after image change)
+      become_user: "{{ actual_user }}"
+      community.docker.docker_compose_v2:
+        project_src: "{{ repo_dest }}/tests"
+        build: always
+        state: present
+      ignore_errors: true   # key may not be in .sops.yaml yet on first run

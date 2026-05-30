@@ -72,23 +72,40 @@ log "Change detected: ${BEFORE:0:8} → ${REMOTE:0:8}"
 git reset --hard "${GIT_REMOTE}/${GIT_BRANCH}" >> "$LOG_FILE" 2>&1
 log "Repo updated to $(git rev-parse --short HEAD)."
 
-# ── Secrets guard ────────────────────────────────────────────────────────────
-# .env is gitignored and must be provisioned manually (or via bootstrap-secrets.sh).
-# git reset --hard does NOT remove untracked files, so .env survives deploys.
-# We validate here so a missing/stale .env produces a clear error, not a
-# cryptic docker failure.
+# ── Secrets: decrypt .env.enc → tests/.env ───────────────────────────────────
+# .env.enc is committed (AES256-GCM encrypted with age).
+# Each Pi has its own age key at ~/.config/sops/age/keys.txt, registered in
+# .sops.yaml. git reset --hard keeps .env.enc current; we decrypt fresh here.
+ENV_ENC="$REPO_DIR/tests/.env.enc"
 ENV_FILE="$REPO_DIR/tests/.env"
-if [ ! -f "$ENV_FILE" ]; then
-    err "Missing $ENV_FILE — secrets not provisioned."
-    err "Run: tests/scripts/bootstrap-secrets.sh <pi-host> from your dev machine."
+AGE_KEY="$HOME/.config/sops/age/keys.txt"
+
+if [ ! -f "$AGE_KEY" ]; then
+    err "Age key not found at $AGE_KEY — run the Ansible playbook to provision this Pi."
     exit 1
 fi
+
+if [ ! -f "$ENV_ENC" ]; then
+    err "Missing $ENV_ENC — check that secrets were committed to the repo."
+    exit 1
+fi
+
+log "Decrypting secrets..."
+if ! SOPS_AGE_KEY_FILE="$AGE_KEY" sops --decrypt \
+        --input-type dotenv --output-type dotenv \
+        "$ENV_ENC" > "$ENV_FILE" 2>> "$LOG_FILE"; then
+    err "sops decrypt failed — this Pi's age key may not be registered in .sops.yaml."
+    err "Run: tests/scripts/add-pi-key.sh <this-host> from your dev machine."
+    rm -f "$ENV_FILE"
+    exit 1
+fi
+
 if grep -q "replace-with-" "$ENV_FILE"; then
-    err "$ENV_FILE still contains placeholder values."
-    err "Edit the file on the Pi or re-run: tests/scripts/bootstrap-secrets.sh <pi-host>"
+    err "$ENV_FILE still contains placeholder values — edit real values via: sops tests/.env.enc"
+    rm -f "$ENV_FILE"
     exit 1
 fi
-log "Secrets validated ($(wc -l < "$ENV_FILE") vars in $ENV_FILE)."
+log "Secrets decrypted ($(grep -c '=' "$ENV_FILE") vars)."
 
 # ── Docker rebuild ────────────────────────────────────────────────────────────
 log "Rebuilding containers..."

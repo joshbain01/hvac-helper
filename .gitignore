@@ -29,3 +29,6 @@ __pycache__/
 data/
 tests/reports/
 
+
+# Ansible
+ansible/inventory.ini

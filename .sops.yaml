@@ -1,0 +1,12 @@
+# SOPS configuration — controls which age keys can decrypt secrets.
+#
+# Adding a new Pi:
+#   1. Run ansible playbook — it generates an age key on the Pi
+#   2. Collect pubkey: ssh <pi-host> 'grep public ~/.config/sops/age/keys.txt'
+#   3. Append the key to the age: string below (comma-separated)
+#   4. sops updatekeys tests/.env.enc
+#   5. Commit .sops.yaml + tests/.env.enc
+#
+creation_rules:
+  - path_regex: tests/\.env\.enc$
+    age: age1eg9l036x22utdn4st0nw5uhymyw009xe425m434ed9dhhyzszv7qrnsw8r
