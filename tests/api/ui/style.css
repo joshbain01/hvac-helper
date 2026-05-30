@@ -1,4 +1,17 @@
 :root {
+    /* Light Theme (Default) */
+    --bg-dark: #f1f5f9;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent-neon: #0284c7;
+    --accent-purple: #7e22ce;
+    --success: #059669;
+    --error: #dc2626;
+}
+
+[data-theme="dark"] {
     --bg-dark: #0f172a;
     --glass-bg: rgba(30, 41, 59, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
@@ -8,6 +21,20 @@
     --accent-purple: #c084fc;
     --success: #10b981;
     --error: #ef4444;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-dark: #0f172a;
+        --glass-bg: rgba(30, 41, 59, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --accent-neon: #38bdf8;
+        --accent-purple: #c084fc;
+        --success: #10b981;
+        --error: #ef4444;
+    }
 }
 
 * {
@@ -80,6 +107,47 @@ header h1 {
     background: linear-gradient(90deg, var(--accent-neon), var(--accent-purple));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Theme Toggle Component */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 4px;
+    transition: all 0.3s ease;
+}
+[data-theme="dark"] .theme-toggle {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.theme-toggle-option {
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-toggle-option:hover {
+    color: var(--text-primary);
+}
+
+.theme-toggle-option.active {
+    background: var(--accent-neon);
+    color: #fff;
 }
 
 .status-indicator {

@@ -14,9 +14,22 @@
     <div class="app-container">
         <header class="glass-panel">
             <h1>HVAC Telemetry Dashboard</h1>
-            <div class="status-indicator">
-                <span class="dot pulse"></span>
-                <span>API Connected</span>
+            <div class="header-controls">
+                <div class="theme-toggle" role="radiogroup" aria-label="Theme selection">
+                    <button class="theme-toggle-option" data-theme="light" role="radio" aria-checked="false">
+                        <span aria-hidden="true">☀️</span> Light
+                    </button>
+                    <button class="theme-toggle-option" data-theme="dark" role="radio" aria-checked="false">
+                        <span aria-hidden="true">🌙</span> Dark
+                    </button>
+                    <button class="theme-toggle-option" data-theme="system" role="radio" aria-checked="true">
+                        <span aria-hidden="true">💻</span> System
+                    </button>
+                </div>
+                <div class="status-indicator">
+                    <span class="dot pulse"></span>
+                    <span>API Connected</span>
+                </div>
             </div>
         </header>
 
