@@ -72,6 +72,24 @@ log "Change detected: ${BEFORE:0:8} → ${REMOTE:0:8}"
 git reset --hard "${GIT_REMOTE}/${GIT_BRANCH}" >> "$LOG_FILE" 2>&1
 log "Repo updated to $(git rev-parse --short HEAD)."
 
+# ── Secrets guard ────────────────────────────────────────────────────────────
+# .env is gitignored and must be provisioned manually (or via bootstrap-secrets.sh).
+# git reset --hard does NOT remove untracked files, so .env survives deploys.
+# We validate here so a missing/stale .env produces a clear error, not a
+# cryptic docker failure.
+ENV_FILE="$REPO_DIR/tests/.env"
+if [ ! -f "$ENV_FILE" ]; then
+    err "Missing $ENV_FILE — secrets not provisioned."
+    err "Run: tests/scripts/bootstrap-secrets.sh <pi-host> from your dev machine."
+    exit 1
+fi
+if grep -q "replace-with-" "$ENV_FILE"; then
+    err "$ENV_FILE still contains placeholder values."
+    err "Edit the file on the Pi or re-run: tests/scripts/bootstrap-secrets.sh <pi-host>"
+    exit 1
+fi
+log "Secrets validated ($(wc -l < "$ENV_FILE") vars in $ENV_FILE)."
+
 # ── Docker rebuild ────────────────────────────────────────────────────────────
 log "Rebuilding containers..."
 cd "$REPO_DIR/tests"
