@@ -22,7 +22,7 @@ services:
   marketing-site:
     build: ../marketing
     ports:
-      - "80:80"
+      - "8081:80"
     restart: unless-stopped
 
 volumes:
