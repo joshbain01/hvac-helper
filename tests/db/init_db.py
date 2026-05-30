@@ -23,7 +23,8 @@ def init_db(db_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize the SQLite database for telemetry.")
-    parser.add_argument("--path", type=str, default="data/test_telemetry.db", help="Path to SQLite database file.")
+    default_path = os.getenv("DB_PATH", "data/test_telemetry.db")
+    parser.add_argument("--path", type=str, default=default_path, help="Path to SQLite database file.")
     args = parser.parse_args()
     init_db(args.path)
     print(f"Database initialized at: {args.path}")
