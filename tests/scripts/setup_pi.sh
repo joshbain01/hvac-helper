@@ -3,6 +3,18 @@ set -e
 
 echo "=== Starting Raspberry Pi 5 HVAC Helper Test Suite Setup ==="
 
+# Ensure the script is run from the root of the repository or from tests/
+if [ -d "tests" ]; then
+    REPO_ROOT=$(pwd)
+elif [ -d "../tests" ]; then
+    REPO_ROOT=$(dirname $(pwd))
+else
+    echo "Error: Please run this script from the root of the repository (/opt/hvac-tests)."
+    exit 1
+fi
+
+echo "Repository root detected at $REPO_ROOT"
+
 # 1. Install Docker Engine
 if ! [ -x "$(command -v docker)" ]; then
     echo "Installing Docker..."
@@ -31,26 +43,23 @@ sudo mkdir -p /var/log/hvac-tests/
 sudo chown -R 1000:1000 /opt/hvac-tests/data/
 sudo chown -R 1000:1000 /var/log/hvac-tests/
 
-# 4. Copy tests directory to /opt/hvac-tests/
-echo "Copying application code..."
-sudo mkdir -p /opt/hvac-tests/
-# Assuming setup script is executed from tests/ or root
-if [ -d "tests" ]; then
-    sudo cp -r tests/* /opt/hvac-tests/
-else
-    sudo cp -r * /opt/hvac-tests/
+# 4. Set up .env files
+echo "Setting up environment variables..."
+if [ ! -f "$REPO_ROOT/.env" ]; then
+    echo "Creating root .env file from tests/.env.example..."
+    sudo cp "$REPO_ROOT/tests/.env.example" "$REPO_ROOT/.env"
+    sudo chown 1000:1000 "$REPO_ROOT/.env"
 fi
 
-# Create .env from .env.example if it doesn't exist
-if [ ! -f "/opt/hvac-tests/.env" ]; then
-    echo "Creating .env file..."
-    sudo cp /opt/hvac-tests/.env.example /opt/hvac-tests/.env
-    sudo chown 1000:1000 /opt/hvac-tests/.env
+if [ ! -f "$REPO_ROOT/tests/.env" ]; then
+    echo "Copying .env to tests/ directory..."
+    sudo cp "$REPO_ROOT/.env" "$REPO_ROOT/tests/.env"
+    sudo chown 1000:1000 "$REPO_ROOT/tests/.env"
 fi
 
 # 5. Build and spin up API
 echo "Building containers and starting hvac-api..."
-cd /opt/hvac-tests
+cd "$REPO_ROOT/tests"
 sudo docker compose build
 sudo docker compose up -d hvac-api
 
@@ -62,13 +71,13 @@ sudo docker compose run --rm hvac-harness python db/init_db.py
 echo "Configuring daily and weekly cron jobs..."
 sudo tee /etc/cron.d/hvac-test-suite << EOF
 # Run Phase 1A (60 scenarios) weekdays at 06:00
-0 6 * * 1-5 ${ACTUAL_USER} cd /opt/hvac-tests && docker compose run --rm hvac-harness python runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
+0 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
 
 # Run full 360 scenarios every Saturday at 06:00
-0 6 * * 6 ${ACTUAL_USER} cd /opt/hvac-tests && docker compose run --rm hvac-harness python runner.py --phase 1b >> /var/log/hvac-tests/weekly.log 2>&1
+0 6 * * 6 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python runner.py --phase 1b >> /var/log/hvac-tests/weekly.log 2>&1
 
 # AI analysis runs 30 minutes after daily suite
-30 6 * * 1-5 ${ACTUAL_USER} cd /opt/hvac-tests && docker compose run --rm hvac-harness python agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
+30 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
 EOF
 
 echo "=== Raspberry Pi Setup Completed Successfully ==="
