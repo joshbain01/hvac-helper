@@ -71,13 +71,13 @@ sudo docker compose run --rm hvac-harness python db/init_db.py
 echo "Configuring daily and weekly cron jobs..."
 sudo tee /etc/cron.d/hvac-test-suite << EOF
 # Run Phase 1A (60 scenarios) weekdays at 06:00
-0 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
+0 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python harness/test_runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
 
 # Run full 360 scenarios every Saturday at 06:00
-0 6 * * 6 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python runner.py --phase 1b >> /var/log/hvac-tests/weekly.log 2>&1
+0 6 * * 6 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python harness/test_runner.py --phase 1b >> /var/log/hvac-tests/weekly.log 2>&1
 
 # AI analysis runs 30 minutes after daily suite
-30 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
+30 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python analysis/agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
 EOF
 
 echo "=== Raspberry Pi Setup Completed Successfully ==="
