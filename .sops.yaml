@@ -9,4 +9,4 @@
 #
 creation_rules:
   - path_regex: tests/\.env\.enc$
-    age: age1eg9l036x22utdn4st0nw5uhymyw009xe425m434ed9dhhyzszv7qrnsw8r
+    age: age1eg9l036x22utdn4st0nw5uhymyw009xe425m434ed9dhhyzszv7qrnsw8r,age1ssp3h7ceky2f4wmemdpqa2vfd3wvwah65aacpvpcmkwwxjd9m9aqpjlts6
