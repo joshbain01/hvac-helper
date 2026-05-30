@@ -40,8 +40,12 @@ fi
 echo "Creating data and logs directories..."
 sudo mkdir -p /opt/hvac-tests/data/
 sudo mkdir -p /var/log/hvac-tests/
-sudo chown -R 1000:1000 /opt/hvac-tests/data/
-sudo chown -R 1000:1000 /var/log/hvac-tests/
+sudo chown -R "${ACTUAL_USER}":"${ACTUAL_USER}" /opt/hvac-tests/data/
+sudo chown -R "${ACTUAL_USER}":"${ACTUAL_USER}" /var/log/hvac-tests/
+
+# Fix git safe.directory so auto_deploy.sh can run git fetch without
+# "dubious ownership" errors when REPO_ROOT was cloned as a different user
+sudo -u "${ACTUAL_USER}" git config --global --add safe.directory "$REPO_ROOT" 2>/dev/null || true
 
 # 4. Set up .env files
 echo "Setting up environment variables..."
@@ -77,8 +81,8 @@ sudo docker compose up -d hvac-api
 echo "Initializing database..."
 sudo docker compose run --rm hvac-harness python db/init_db.py
 
-# 7. Configure crontabs
-echo "Configuring daily and weekly cron jobs..."
+# 7a. Configure test suite crontab (daily/weekly runs)
+echo "Configuring test suite cron jobs..."
 sudo tee /etc/cron.d/hvac-test-suite << EOF
 # Run Phase 1A (60 scenarios) weekdays at 06:00
 0 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python harness/test_runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
@@ -88,9 +92,17 @@ sudo tee /etc/cron.d/hvac-test-suite << EOF
 
 # AI analysis runs 30 minutes after daily suite
 30 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python analysis/agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
+EOF
 
-# Auto-deploy latest changes every 5 minutes
-*/5 * * * * ${ACTUAL_USER} /bin/bash $REPO_ROOT/auto_deploy.sh
+# 7b. Configure auto-deploy crontab (pulls origin/main every 5 minutes).
+# The script handles its own logging to /var/log/hvac-tests/auto_deploy.log.
+# No redirect here so cron-level failures (e.g. missing executable) surface
+# via cron mail rather than being silently swallowed.
+echo "Configuring auto-deploy cron job..."
+sudo tee /etc/cron.d/hvac-deploy << EOF
+# HVAC Helper auto-deploy: pulls origin/main and rebuilds Docker on every new commit.
+# Logging is handled inside the script → /var/log/hvac-tests/auto_deploy.log
+*/5 * * * * ${ACTUAL_USER} $REPO_ROOT/auto_deploy.sh
 EOF
 
 echo "=== Raspberry Pi Setup Completed Successfully ==="
