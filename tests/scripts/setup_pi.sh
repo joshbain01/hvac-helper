@@ -13,10 +13,15 @@ else
     echo "Docker is already installed."
 fi
 
-# 2. Add pi user to docker group
+# 2. Add current user to docker group
+ACTUAL_USER="${SUDO_USER:-$(whoami)}"
+if [ "$ACTUAL_USER" = "root" ]; then
+    ACTUAL_USER=$(logname 2>/dev/null || echo "pi")
+fi
+
 if getent group docker >/dev/null; then
-    echo "Adding 'pi' user to docker group..."
-    sudo usermod -aG docker pi || true
+    echo "Adding '${ACTUAL_USER}' user to docker group..."
+    sudo usermod -aG docker "${ACTUAL_USER}" || true
 fi
 
 # 3. Create required directories
@@ -35,24 +40,6 @@ if [ -d "tests" ]; then
 else
     sudo cp -r * /opt/hvac-tests/
 fi
-
-# Copy shared dependencies into harness/ and api/ build contexts
-echo "Bundling docker contexts..."
-sudo mkdir -p /opt/hvac-tests/harness/db
-sudo mkdir -p /opt/hvac-tests/harness/simulator
-sudo mkdir -p /opt/hvac-tests/harness/scenarios
-sudo mkdir -p /opt/hvac-tests/harness/tests
-
-sudo cp -r /opt/hvac-tests/db/* /opt/hvac-tests/harness/db/
-sudo cp -r /opt/hvac-tests/simulator/* /opt/hvac-tests/harness/simulator/
-sudo cp -r /opt/hvac-tests/scenarios/* /opt/hvac-tests/harness/scenarios/
-sudo cp -r /opt/hvac-tests/analysis/agent_analysis.py /opt/hvac-tests/harness/agent_analysis.py
-sudo cp -r /opt/hvac-tests/* /opt/hvac-tests/harness/tests/
-
-sudo mkdir -p /opt/hvac-tests/api/db
-sudo cp -r /opt/hvac-tests/db/* /opt/hvac-tests/api/db/
-sudo mkdir -p /opt/hvac-tests/api/tests
-sudo cp -r /opt/hvac-tests/* /opt/hvac-tests/api/tests/
 
 # Create .env from .env.example if it doesn't exist
 if [ ! -f "/opt/hvac-tests/.env" ]; then
@@ -73,15 +60,15 @@ sudo docker compose run --rm hvac-harness python db/init_db.py
 
 # 7. Configure crontabs
 echo "Configuring daily and weekly cron jobs..."
-sudo tee /etc/cron.d/hvac-test-suite << 'EOF'
+sudo tee /etc/cron.d/hvac-test-suite << EOF
 # Run Phase 1A (60 scenarios) weekdays at 06:00
-0 6 * * 1-5 pi cd /opt/hvac-tests && docker compose run --rm hvac-harness python runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
+0 6 * * 1-5 ${ACTUAL_USER} cd /opt/hvac-tests && docker compose run --rm hvac-harness python runner.py --phase 1a >> /var/log/hvac-tests/daily.log 2>&1
 
 # Run full 360 scenarios every Saturday at 06:00
-0 6 * * 6 pi cd /opt/hvac-tests && docker compose run --rm hvac-harness python runner.py --phase 1b >> /var/log/hvac-tests/weekly.log 2>&1
+0 6 * * 6 ${ACTUAL_USER} cd /opt/hvac-tests && docker compose run --rm hvac-harness python runner.py --phase 1b >> /var/log/hvac-tests/weekly.log 2>&1
 
 # AI analysis runs 30 minutes after daily suite
-30 6 * * 1-5 pi cd /opt/hvac-tests && docker compose run --rm hvac-harness python agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
+30 6 * * 1-5 ${ACTUAL_USER} cd /opt/hvac-tests && docker compose run --rm hvac-harness python agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
 EOF
 
 echo "=== Raspberry Pi Setup Completed Successfully ==="

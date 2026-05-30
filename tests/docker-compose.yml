@@ -1,6 +1,8 @@
 services:
   hvac-harness:
-    build: ./harness
+    build:
+      context: .
+      dockerfile: harness/Dockerfile
     volumes:
       - test-data:/data
       - /var/run/dbus:/var/run/dbus
