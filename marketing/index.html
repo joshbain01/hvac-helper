@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAC Helper | Smart AI Diagnostic Tool</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- Theme Toggle Component -->
+    <div class="theme-toggle" role="radiogroup" aria-label="Theme selection">
+        <button class="theme-toggle-option" data-theme="light" role="radio" aria-checked="false">
+            <span aria-hidden="true">☀️</span> Light
+        </button>
+        <button class="theme-toggle-option" data-theme="dark" role="radio" aria-checked="false">
+            <span aria-hidden="true">🌙</span> Dark
+        </button>
+        <button class="theme-toggle-option" data-theme="system" role="radio" aria-checked="true">
+            <span aria-hidden="true">💻</span> System
+        </button>
+    </div>
+
+    <!-- Hero Section -->
+    <main>
+        <section class="hero container">
+            <div class="grid grid-2-col items-center">
+                <div class="hero-content">
+                    <h1>The world's smartest <span class="text-gradient">AI-powered</span> HVAC diagnostic assistant.</h1>
+                    <p>Identify failures, monitor hardware telemetry, and automatically diagnose root causes with a local-first Raspberry Pi solution.</p>
+                    <div class="flex gap-4">
+                        <a href="#features" class="btn btn-primary">Explore Features</a>
+                        <a href="http://192.168.1.10:8080" class="btn btn-outline" target="_blank" rel="noopener noreferrer">View Live Dashboard</a>
+                    </div>
+                </div>
+                <div class="hero-image glass-panel flex justify-center items-center" style="min-height: 400px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 20px;">⚡</div>
+                        <h3 style="font-size: 24px;">Telemetry Active</h3>
+                        <p class="text-secondary">Monitoring real-time data</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="section container">
+            <div class="text-center mb-8">
+                <h2 style="font-size: var(--text-3xl);">Powerful features for pros.</h2>
+                <p class="text-secondary" style="font-size: var(--text-lg); margin-top: var(--space-4);">Everything you need to diagnose HVAC issues automatically.</p>
+            </div>
+            
+            <div class="grid grid-3-col">
+                <div class="glass-panel feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Real-time Telemetry</h3>
+                    <p class="text-secondary">Capture Bluetooth and Serial data from your HVAC hardware directly on the Raspberry Pi node in real-time.</p>
+                </div>
+                <div class="glass-panel feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI Diagnostics</h3>
+                    <p class="text-secondary">Our built-in LLM analyzes failing test scenarios and generates human-readable hypotheses for the root cause.</p>
+                </div>
+                <div class="glass-panel feature-card">
+                    <div class="feature-icon">🏠</div>
+                    <h3>Local-First</h3>
+                    <p class="text-secondary">Designed to run autonomously on a Raspberry Pi without needing a constant internet connection or cloud dependency.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="section text-center" style="border-top: 1px solid var(--border-color);">
+            <p class="text-secondary">© 2026 HVAC Helper. Built with ❤️ for Raspberry Pi.</p>
+        </footer>
+    </main>
+
+    <!-- JS -->
+    <script src="js/main.js"></script>
+</body>
+</html>

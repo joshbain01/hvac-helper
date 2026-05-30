@@ -19,6 +19,12 @@ services:
     env_file: .env
     restart: unless-stopped
 
+  marketing-site:
+    build: ../marketing
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
 volumes:
   test-data:
     driver: local
