@@ -60,7 +60,7 @@ fi
 # 5. Build and spin up API
 echo "Building containers and starting hvac-api..."
 cd "$REPO_ROOT/tests"
-sudo docker compose build
+sudo docker compose build hvac-api hvac-harness
 sudo docker compose up -d hvac-api
 
 # 6. Initialize database schema
