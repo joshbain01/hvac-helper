@@ -88,6 +88,9 @@ sudo tee /etc/cron.d/hvac-test-suite << EOF
 
 # AI analysis runs 30 minutes after daily suite
 30 6 * * 1-5 ${ACTUAL_USER} cd $REPO_ROOT/tests && docker compose run --rm hvac-harness python analysis/agent_analysis.py >> /var/log/hvac-tests/analysis.log 2>&1
+
+# Auto-deploy latest changes every 5 minutes
+*/5 * * * * ${ACTUAL_USER} /bin/bash $REPO_ROOT/auto_deploy.sh
 EOF
 
 echo "=== Raspberry Pi Setup Completed Successfully ==="
