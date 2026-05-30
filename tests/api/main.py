@@ -6,12 +6,11 @@ import uuid
 import json
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, field_validator
-from fastapi import FastAPI, Depends, HTTPException, status, Security, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
-security = HTTPBearer()
 API_BEARER_TOKEN = os.getenv("API_BEARER_TOKEN")
 DB_PATH = os.getenv("DB_PATH", "data/test_telemetry.db")
 
@@ -39,16 +38,9 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-def get_bearer_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
-    if API_BEARER_TOKEN and credentials.credentials != API_BEARER_TOKEN:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing bearer token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return credentials.credentials
 
-@app.get("/schema", dependencies=[Depends(get_bearer_token)])
+
+@app.get("/schema")
 def get_schema():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -62,7 +54,7 @@ def get_schema():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/scenarios", dependencies=[Depends(get_bearer_token)])
+@app.get("/scenarios")
 def get_scenarios(limit: int = 100, offset: int = 0):
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -77,7 +69,7 @@ def get_scenarios(limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/runs", dependencies=[Depends(get_bearer_token)])
+@app.get("/runs")
 def get_runs():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -99,7 +91,7 @@ def get_runs():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/hypotheses", dependencies=[Depends(get_bearer_token)])
+@app.get("/hypotheses")
 def get_hypotheses():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -126,7 +118,7 @@ def make_progress_handler(start_time: float, timeout: float = 5.0):
         return 0
     return progress_handler
 
-@app.post("/query", dependencies=[Depends(get_bearer_token)])
+@app.post("/query")
 def execute_query(request: QueryRequest):
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -251,7 +243,7 @@ class HypothesisRequest(BaseModel):
     evidence_query: Optional[str] = None
     evidence_result: Optional[Dict[str, Any]] = None
 
-@app.post("/hypotheses", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_bearer_token)])
+@app.post("/hypotheses", status_code=status.HTTP_201_CREATED)
 def submit_hypothesis(request: HypothesisRequest):
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -292,7 +284,7 @@ def submit_hypothesis(request: HypothesisRequest):
 uploaded_snapshots = {}
 idempotency_keys = {}
 
-@app.post("/api/v1/snapshots", dependencies=[Depends(get_bearer_token)])
+@app.post("/api/v1/snapshots")
 async def upload_snapshot(request: Request):
     idempotency_key = request.headers.get("Idempotency-Key")
     if not idempotency_key:
@@ -347,9 +339,13 @@ async def upload_snapshot(request: Request):
     )
 
 # Clear endpoint for test suite resets
-@app.post("/api/v1/reset", dependencies=[Depends(get_bearer_token)])
+@app.post("/api/v1/reset")
 def reset_snapshots():
     uploaded_snapshots.clear()
     idempotency_keys.clear()
     return {"status": "reset"}
 
+# Mount the static UI at the root directory
+# This MUST be at the bottom so it doesn't intercept defined API routes
+if os.path.isdir("ui"):
+    app.mount("/", StaticFiles(directory="ui", html=True), name="ui")

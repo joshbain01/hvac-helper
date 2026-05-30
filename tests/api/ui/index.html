@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAC Helper Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-effect"></div>
+    <div class="app-container">
+        <header class="glass-panel">
+            <h1>HVAC Telemetry Dashboard</h1>
+            <div class="status-indicator">
+                <span class="dot pulse"></span>
+                <span>API Connected</span>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Runs Overview Panel -->
+            <section class="glass-panel stat-card runs-card">
+                <h2>Latest Run Overview</h2>
+                <div id="runs-content" class="loading-state">
+                    Loading runs...
+                </div>
+            </section>
+
+            <!-- Scenarios List Panel -->
+            <section class="glass-panel list-card scenarios-card">
+                <h2>Recent Scenarios</h2>
+                <div class="table-container">
+                    <table id="scenarios-table">
+                        <thead>
+                            <tr>
+                                <th>Outcome</th>
+                                <th>Workflow</th>
+                                <th>Network</th>
+                                <th>Time (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scenarios-body">
+                            <tr><td colspan="4" class="loading-state">Loading scenarios...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Hypotheses List Panel -->
+            <section class="glass-panel list-card hypotheses-card">
+                <h2>AI Hypotheses Feed</h2>
+                <div class="feed-container" id="hypotheses-feed">
+                    <div class="loading-state">Loading hypotheses...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
