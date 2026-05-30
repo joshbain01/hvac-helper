@@ -51,6 +51,16 @@ if [ ! -f "$REPO_ROOT/.env" ]; then
     sudo chown 1000:1000 "$REPO_ROOT/.env"
 fi
 
+# Halt if placeholders are still present
+if grep -q "replace-with-secure-random-token" "$REPO_ROOT/.env"; then
+    echo "=========================================================="
+    echo "🚨 ERROR: Default placeholders detected in $REPO_ROOT/.env!"
+    echo "Please edit the .env file and configure your API_BEARER_TOKEN and OPENROUTER_API_KEY."
+    echo "Run this setup script again once configured."
+    echo "=========================================================="
+    exit 1
+fi
+
 if [ ! -f "$REPO_ROOT/tests/.env" ]; then
     echo "Copying .env to tests/ directory..."
     sudo cp "$REPO_ROOT/.env" "$REPO_ROOT/tests/.env"

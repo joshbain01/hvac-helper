@@ -1,8 +1,34 @@
 const API_BASE = window.location.origin;
 
+function getApiToken() {
+    let token = localStorage.getItem('api_token');
+    if (!token) {
+        token = prompt("Please enter your HVAC Helper API Token to view the dashboard:");
+        if (token) {
+            localStorage.setItem('api_token', token);
+        }
+    }
+    return token;
+}
+
 async function fetchData(endpoint) {
+    const token = getApiToken();
     try {
-        const response = await fetch(`${API_BASE}${endpoint}`);
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            headers: headers
+        });
+        
+        if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('api_token');
+            alert("Your API Token is invalid or has expired. Please refresh the page to enter a new one.");
+            throw new Error(`Auth error: ${response.status}`);
+        }
+        
         if (!response.ok) throw new Error(`API error: ${response.status}`);
         return await response.json();
     } catch (error) {

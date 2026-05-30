@@ -6,13 +6,25 @@ import uuid
 import json
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, field_validator
-from fastapi import FastAPI, HTTPException, status, Request
+from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 app = FastAPI()
 API_BEARER_TOKEN = os.getenv("API_BEARER_TOKEN")
 DB_PATH = os.getenv("DB_PATH", "data/test_telemetry.db")
+
+security = HTTPBearer()
+
+def get_bearer_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if credentials.credentials != API_BEARER_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return credentials.credentials
 
 # In-memory rate limiting dictionary: {ip: [timestamps]}
 rate_limits: Dict[str, List[float]] = {}
@@ -40,7 +52,7 @@ async def rate_limit_middleware(request: Request, call_next):
 
 
 
-@app.get("/schema")
+@app.get("/schema", dependencies=[Depends(get_bearer_token)])
 def get_schema():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -54,7 +66,7 @@ def get_schema():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/scenarios")
+@app.get("/scenarios", dependencies=[Depends(get_bearer_token)])
 def get_scenarios(limit: int = 100, offset: int = 0):
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -69,7 +81,7 @@ def get_scenarios(limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/runs")
+@app.get("/runs", dependencies=[Depends(get_bearer_token)])
 def get_runs():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -91,7 +103,7 @@ def get_runs():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/hypotheses")
+@app.get("/hypotheses", dependencies=[Depends(get_bearer_token)])
 def get_hypotheses():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -118,7 +130,7 @@ def make_progress_handler(start_time: float, timeout: float = 5.0):
         return 0
     return progress_handler
 
-@app.post("/query")
+@app.post("/query", dependencies=[Depends(get_bearer_token)])
 def execute_query(request: QueryRequest):
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -243,7 +255,7 @@ class HypothesisRequest(BaseModel):
     evidence_query: Optional[str] = None
     evidence_result: Optional[Dict[str, Any]] = None
 
-@app.post("/hypotheses", status_code=status.HTTP_201_CREATED)
+@app.post("/hypotheses", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_bearer_token)])
 def submit_hypothesis(request: HypothesisRequest):
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail=f"Database file not found at {DB_PATH}")
@@ -284,7 +296,7 @@ def submit_hypothesis(request: HypothesisRequest):
 uploaded_snapshots = {}
 idempotency_keys = {}
 
-@app.post("/api/v1/snapshots")
+@app.post("/api/v1/snapshots", dependencies=[Depends(get_bearer_token)])
 async def upload_snapshot(request: Request):
     idempotency_key = request.headers.get("Idempotency-Key")
     if not idempotency_key:
@@ -339,7 +351,7 @@ async def upload_snapshot(request: Request):
     )
 
 # Clear endpoint for test suite resets
-@app.post("/api/v1/reset")
+@app.post("/api/v1/reset", dependencies=[Depends(get_bearer_token)])
 def reset_snapshots():
     uploaded_snapshots.clear()
     idempotency_keys.clear()
